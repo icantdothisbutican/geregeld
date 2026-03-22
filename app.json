@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Geregeld",
+    "slug": "geregeld",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "geregeld",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4F1DE"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.geregeld"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F4F1DE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "app.geregeld"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
+  }
+}
