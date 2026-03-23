@@ -13,6 +13,7 @@ import { Card } from '../../src/components/Card';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { loadState, saveState, AppState } from '../../src/store/appStore';
 import { getFilteredChapters, Chapter } from '../../src/data/checklist';
+import { GUIDE_STEPS } from '../../src/data/guide';
 import { FLOWS } from '../../src/data/flows';
 
 function UrgencyBadge({ urgency }: { urgency: string }) {
@@ -27,6 +28,40 @@ function UrgencyBadge({ urgency }: { urgency: string }) {
       <Text style={[styles.badgeText, { color: config.color }]}>{config.label}</Text>
     </View>
   );
+}
+
+interface GuideChapter {
+  key: string;
+  label: string;
+  description: string;
+  items: {
+    id: string;
+    title: string;
+    description: string;
+    urgency: 'high' | 'medium' | 'low';
+    duration: string;
+    hasFlow?: boolean;
+    actionLabel?: string;
+    timing?: string;
+  }[];
+}
+
+function getGuideChapter(): GuideChapter {
+  return {
+    key: 'overlijden-gids',
+    label: 'Bij een overlijden',
+    description: 'Stap-voor-stap gids voor nabestaanden',
+    items: GUIDE_STEPS.map((step) => ({
+      id: `guide-step-${step.step}`,
+      title: `${step.step}. ${step.title}`,
+      description: step.description,
+      urgency: step.timing === 'Direct' ? 'high' as const : step.timing.includes('24') || step.timing.includes('1-2') ? 'high' as const : 'medium' as const,
+      duration: step.duration,
+      hasFlow: !!step.flowId,
+      actionLabel: 'Direct regelen',
+      timing: step.timing,
+    })),
+  };
 }
 
 export default function ChecklistScreen() {
@@ -46,8 +81,11 @@ export default function ChecklistScreen() {
 
   if (!state) return null;
 
+  const guideChapter = getGuideChapter();
+  const allChapters = [...chapters, guideChapter];
+
   const checkedItems = state.checkedItems || [];
-  const totalItems = chapters.reduce((sum, ch) => sum + ch.items.length, 0);
+  const totalItems = allChapters.reduce((sum, ch) => sum + ch.items.length, 0);
   const progress = totalItems > 0 ? checkedItems.length / totalItems : 0;
 
   async function toggleItem(itemId: string) {
@@ -59,6 +97,15 @@ export default function ChecklistScreen() {
   }
 
   function navigateToFlow(itemId: string) {
+    // Handle guide step flows
+    if (itemId.startsWith('guide-step-')) {
+      const stepNum = parseInt(itemId.replace('guide-step-', ''));
+      const guideStep = GUIDE_STEPS.find((s) => s.step === stepNum);
+      if (guideStep?.flowId && FLOWS[guideStep.flowId]) {
+        router.push(`/flow/${guideStep.flowId}`);
+        return;
+      }
+    }
     if (FLOWS[itemId]) {
       router.push(`/flow/${itemId}`);
     }
@@ -80,20 +127,21 @@ export default function ChecklistScreen() {
           )}
         </View>
 
-        {chapters.map((chapter) => {
+        {allChapters.map((chapter) => {
           const isExpanded = expandedChapter === chapter.key;
           const chapterChecked = chapter.items.filter((i) => checkedItems.includes(i.id)).length;
           const chapterDone = chapterChecked === chapter.items.length;
+          const isGuide = chapter.key === 'overlijden-gids';
 
           return (
-            <Card key={chapter.key} style={styles.chapterCard}>
+            <Card key={chapter.key} style={[styles.chapterCard, isGuide && styles.guideChapterCard]}>
               <TouchableOpacity
                 style={styles.chapterHeader}
                 onPress={() => setExpandedChapter(isExpanded ? null : chapter.key)}
                 activeOpacity={0.7}
               >
                 <View style={styles.chapterTitleContent}>
-                  <Text style={styles.chapterLabel}>{chapter.label}</Text>
+                  <Text style={[styles.chapterLabel, isGuide && styles.guideChapterLabel]}>{chapter.label}</Text>
                   <Text style={styles.chapterDesc}>{chapter.description}</Text>
                 </View>
                 <View style={styles.chapterMeta}>
@@ -112,9 +160,20 @@ export default function ChecklistScreen() {
 
               {isExpanded && (
                 <View>
+                  {isGuide && (
+                    <View style={styles.guideNote}>
+                      <Text style={styles.guideNoteText}>
+                        Neem de tijd. Deze stappen hoeven niet allemaal vandaag.
+                      </Text>
+                    </View>
+                  )}
                   {chapter.items.map((item) => {
                     const isChecked = checkedItems.includes(item.id);
-                    const hasFlow = item.hasFlow && FLOWS[item.id];
+                    const hasFlow = item.hasFlow && (
+                      item.id.startsWith('guide-step-')
+                        ? !!GUIDE_STEPS.find((s) => `guide-step-${s.step}` === item.id)?.flowId
+                        : !!FLOWS[item.id]
+                    );
 
                     return (
                       <View key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]}>
@@ -134,6 +193,11 @@ export default function ChecklistScreen() {
                             <View style={styles.checkMeta}>
                               <UrgencyBadge urgency={item.urgency} />
                               <Text style={styles.itemDuration}>{item.duration}</Text>
+                              {('timing' in item && item.timing) ? (
+                                <View style={styles.timingBadge}>
+                                  <Text style={styles.timingText}>{item.timing as string}</Text>
+                                </View>
+                              ) : null}
                             </View>
                           </View>
                         </TouchableOpacity>
@@ -158,6 +222,12 @@ export default function ChecklistScreen() {
             </Card>
           );
         })}
+
+        <View style={styles.bottomNote}>
+          <Text style={styles.bottomNoteText}>
+            Specifiek voor Nederland. Bij twijfel, raadpleeg altijd een professional.
+          </Text>
+        </View>
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -195,7 +265,7 @@ const styles = StyleSheet.create({
   },
   completeText: {
     fontSize: FontSizes.body,
-    color: Colors.primaryDark,
+    color: Colors.primary,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -203,6 +273,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     padding: 0,
     overflow: 'hidden',
+  },
+  guideChapterCard: {
+    borderColor: 'rgba(167, 139, 250, 0.3)',
+    borderWidth: 1,
   },
   chapterHeader: {
     flexDirection: 'row',
@@ -219,6 +293,9 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.large,
     fontWeight: '700',
     color: Colors.text,
+  },
+  guideChapterLabel: {
+    color: Colors.accent,
   },
   chapterDesc: {
     fontSize: FontSizes.small,
@@ -243,11 +320,24 @@ const styles = StyleSheet.create({
   doneBadgeText: {
     fontSize: FontSizes.caption,
     fontWeight: '600',
-    color: Colors.primaryDark,
+    color: Colors.primary,
   },
   expandIcon: {
     fontSize: 12,
     color: Colors.textSecondary,
+  },
+  guideNote: {
+    backgroundColor: Colors.warningLight,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.separator,
+  },
+  guideNoteText: {
+    fontSize: FontSizes.small,
+    color: Colors.warning,
+    fontWeight: '500',
+    fontStyle: 'italic',
   },
   checkItem: {
     borderTopWidth: 1,
@@ -276,7 +366,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   checkmark: {
-    color: Colors.surface,
+    color: '#0B0B14',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -302,6 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   badge: {
     alignSelf: 'flex-start',
@@ -317,6 +408,17 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.caption,
     color: Colors.textSecondary,
   },
+  timingBadge: {
+    backgroundColor: Colors.accentLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  timingText: {
+    fontSize: FontSizes.caption,
+    fontWeight: '500',
+    color: Colors.accent,
+  },
   flowButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -326,15 +428,29 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     marginTop: Spacing.sm,
     marginLeft: 44,
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   flowButtonText: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.primaryDark,
+    color: Colors.primary,
   },
   flowButtonArrow: {
     fontSize: FontSizes.large,
-    color: Colors.primaryDark,
+    color: Colors.primary,
+  },
+  bottomNote: {
+    backgroundColor: Colors.fill,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+  },
+  bottomNoteText: {
+    fontSize: FontSizes.small,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   bottomPadding: {
     height: Spacing.xxl,

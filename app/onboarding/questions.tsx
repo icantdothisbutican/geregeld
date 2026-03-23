@@ -16,7 +16,7 @@ import { ChoiceButton } from '../../src/components/ChoiceButton';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { saveState, UserSituation, OnboardingData } from '../../src/store/appStore';
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 
 interface StepConfig {
   question: string;
@@ -59,6 +59,12 @@ const STEPS: StepConfig[] = [
     options: ['Huur', 'Koop', 'Anders'],
   },
   {
+    question: 'Wat is je thuisadres?',
+    subtitle: 'Op basis hiervan vinden we notarissen en uitvaartondernemers bij jou in de buurt',
+    type: 'text',
+    placeholder: 'Straat, huisnummer, postcode, stad',
+  },
+  {
     question: 'Heb je al een testament?',
     subtitle: 'Geen zorgen als het antwoord nee is — we helpen je verder',
     type: 'choice',
@@ -88,6 +94,7 @@ export default function OnboardingQuestions() {
   const [hasPartner, setHasPartner] = useState<string | null>(null);
   const [hasChildren, setHasChildren] = useState<string | null>(null);
   const [housingType, setHousingType] = useState<string | null>(null);
+  const [address, setAddress] = useState('');
   const [hasTestament, setHasTestament] = useState<string | null>(null);
   const [preferenceMode, setPreferenceMode] = useState<string | null>(null);
   const [trustedName, setTrustedName] = useState('');
@@ -102,9 +109,10 @@ export default function OnboardingQuestions() {
       case 2: return hasPartner;
       case 3: return hasChildren;
       case 4: return housingType;
-      case 5: return hasTestament;
-      case 6: return preferenceMode;
-      case 7: return trustedName || null;
+      case 5: return address || null;
+      case 6: return hasTestament;
+      case 7: return preferenceMode;
+      case 8: return trustedName || null;
       default: return null;
     }
   }
@@ -115,15 +123,16 @@ export default function OnboardingQuestions() {
       case 2: setHasPartner(answer); break;
       case 3: setHasChildren(answer); break;
       case 4: setHousingType(answer); break;
-      case 5: setHasTestament(answer); break;
-      case 6: setPreferenceMode(answer); break;
+      case 6: setHasTestament(answer); break;
+      case 7: setPreferenceMode(answer); break;
     }
   }
 
   function canProceed(): boolean {
     switch (step) {
       case 0: return name.trim().length > 0;
-      case 7: return true;
+      case 5: return true; // address is optional
+      case 8: return true; // trusted person is optional
       default: return getCurrentAnswer() !== null;
     }
   }
@@ -153,6 +162,7 @@ export default function OnboardingQuestions() {
           ? { name: trustedName.trim(), relation: trustedRelation.trim() }
           : null,
         uitvaartWens: null,
+        address: address.trim(),
       };
 
       await saveState({
@@ -171,6 +181,9 @@ export default function OnboardingQuestions() {
     if (isLastStep) {
       return trustedName.trim() ? 'Start mijn checklist' : 'Sla over en start';
     }
+    if (step === 5 && !address.trim()) {
+      return 'Sla over';
+    }
     return 'Volgende';
   }
 
@@ -181,10 +194,13 @@ export default function OnboardingQuestions() {
         if (ageRange === '65+') return 'Goed dat je dit regelt. We houden het simpel.';
         return null;
       case 5:
+        if (address.trim()) return 'We zoeken automatisch notarissen en uitvaartondernemers bij jou in de buurt.';
+        return null;
+      case 6:
         if (hasTestament === 'Nee') return 'Geen zorgen — dit is een van de eerste dingen die we gaan regelen.';
         if (hasTestament === 'Ja') return 'We checken of je testament nog actueel is.';
         return null;
-      case 6:
+      case 7:
         if (preferenceMode === 'Digitaal') return 'We laten je zien hoe je wachtwoorden veilig deelt via je telefoon.';
         if (preferenceMode === 'Op papier') return 'We geven je handige templates om alles op papier vast te leggen.';
         return null;
@@ -207,7 +223,7 @@ export default function OnboardingQuestions() {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <ProgressBar progress={(step + 1) / TOTAL_STEPS} />
+              <ProgressBar progress={(step + 1) / TOTAL_STEPS} color={Colors.accent} />
               <Text style={styles.stepText}>Stap {step + 1} van {TOTAL_STEPS}</Text>
             </View>
 
@@ -233,13 +249,26 @@ export default function OnboardingQuestions() {
                 </View>
               )}
 
-              {currentStep.type === 'text' && (
+              {currentStep.type === 'text' && step === 0 && (
                 <TextInput
                   style={styles.textInput}
                   placeholder={currentStep.placeholder}
                   placeholderTextColor={Colors.textTertiary}
                   value={name}
                   onChangeText={setName}
+                  autoFocus
+                  returnKeyType="next"
+                  onSubmitEditing={() => canProceed() && handleNext()}
+                />
+              )}
+
+              {currentStep.type === 'text' && step === 5 && (
+                <TextInput
+                  style={styles.textInput}
+                  placeholder={currentStep.placeholder}
+                  placeholderTextColor={Colors.textTertiary}
+                  value={address}
+                  onChangeText={setAddress}
                   autoFocus
                   returnKeyType="next"
                   onSubmitEditing={() => canProceed() && handleNext()}
@@ -358,22 +387,22 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     fontSize: FontSizes.large,
     color: Colors.text,
-    borderWidth: 2,
-    borderColor: Colors.separator,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     textAlign: 'center',
   },
   textPairSection: {
     gap: Spacing.md,
   },
   hintBox: {
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.accentLight,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginTop: Spacing.sm,
   },
   hintText: {
     fontSize: FontSizes.small,
-    color: Colors.primaryDark,
+    color: Colors.accent,
     textAlign: 'center',
     fontWeight: '500',
     lineHeight: 20,

@@ -12,6 +12,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
+import { Ionicons } from '@expo/vector-icons';
 import { loadState, AppState } from '../../src/store/appStore';
 import { getFilteredChapters } from '../../src/data/checklist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -45,6 +46,7 @@ export default function ProfileScreen() {
       const housing = situation.housingType === 'huur' ? 'Huur' : situation.housingType === 'koop' ? 'Koop' : 'Anders';
       items.push({ label: 'Woning', value: housing });
     }
+    if (onboarding?.address) items.push({ label: 'Adres', value: onboarding.address });
     if (onboarding?.hasTestament) {
       const testament = onboarding.hasTestament === 'ja' ? 'Ja' : onboarding.hasTestament === 'nee' ? 'Nee' : 'Weet niet';
       items.push({ label: 'Testament', value: testament });
@@ -79,8 +81,10 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Profiel</Text>
-          <Text style={styles.subtitle}>Je voortgang en instellingen</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Instellingen</Text>
         </View>
 
         {/* Progress overview */}
@@ -148,32 +152,6 @@ export default function ProfileScreen() {
           />
         </Card>
 
-        {/* Upgrade */}
-        <Card style={styles.upgradeCard}>
-          <Text style={styles.upgradeTitle}>Geregeld+</Text>
-          <Text style={styles.upgradeText}>
-            Ontgrendel de wachtwoordkluis, documentenkluis, PostNL-integratie en meer.
-          </Text>
-          <View style={styles.upgradeFeatures}>
-            <Text style={styles.upgradeFeature}>Wachtwoordkluis</Text>
-            <Text style={styles.upgradeFeature}>Documentenkluis</Text>
-            <Text style={styles.upgradeFeature}>Onbeperkt contacten</Text>
-            <Text style={styles.upgradeFeature}>PostNL brieven versturen</Text>
-            <Text style={styles.upgradeFeature}>Jaarlijkse check-in</Text>
-          </View>
-          <Button
-            title="Upgrade naar Geregeld+"
-            onPress={() =>
-              Alert.alert(
-                'Binnenkort beschikbaar',
-                'Geregeld+ is nog in ontwikkeling.'
-              )
-            }
-            variant="primary"
-            size="medium"
-          />
-        </Card>
-
         {/* About */}
         <Card style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Over Geregeld</Text>
@@ -190,7 +168,7 @@ export default function ProfileScreen() {
           onPress={handleReset}
           variant="outline"
           size="medium"
-          style={{ marginTop: Spacing.md }}
+          style={{ marginTop: Spacing.md, borderColor: Colors.danger }}
           textStyle={{ color: Colors.danger }}
         />
 
@@ -209,18 +187,26 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
     marginBottom: Spacing.lg,
-    gap: Spacing.sm,
     marginTop: Spacing.md,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
-    fontSize: FontSizes.h1,
+    fontSize: FontSizes.h2,
     fontWeight: '700',
     color: Colors.text,
-  },
-  subtitle: {
-    fontSize: FontSizes.body,
-    color: Colors.textSecondary,
   },
   statsCard: {
     marginBottom: Spacing.md,
@@ -289,39 +275,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     gap: Spacing.sm,
     backgroundColor: Colors.primaryLight,
+    borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   sharedTitle: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.primaryDark,
+    color: Colors.primary,
   },
   sharedText: {
     fontSize: FontSizes.body,
-    color: Colors.primaryDark,
-    lineHeight: 24,
-  },
-  upgradeCard: {
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-    borderWidth: 2,
-    borderColor: Colors.accent,
-  },
-  upgradeTitle: {
-    fontSize: FontSizes.h2,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  upgradeText: {
-    fontSize: FontSizes.body,
     color: Colors.textSecondary,
     lineHeight: 24,
-  },
-  upgradeFeatures: {
-    gap: Spacing.xs,
-  },
-  upgradeFeature: {
-    fontSize: FontSizes.body,
-    color: Colors.text,
   },
   aboutText: {
     fontSize: FontSizes.body,
@@ -330,7 +294,7 @@ const styles = StyleSheet.create({
   },
   aboutSubtext: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
   },
   bottomPadding: {
     height: Spacing.xxl,

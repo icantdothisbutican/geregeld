@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   mainMessage: {
     fontSize: FontSizes.h3,
-    color: Colors.text,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 30,
     fontWeight: '500',
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   },
   buttonSubtext: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     marginTop: Spacing.sm,
   },
 });

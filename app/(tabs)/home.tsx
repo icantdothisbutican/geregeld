@@ -11,15 +11,15 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { ProgressBar } from '../../src/components/ProgressBar';
+import { Ionicons } from '@expo/vector-icons';
 import { loadState, AppState } from '../../src/store/appStore';
-import { getFilteredChapters, ChecklistItem } from '../../src/data/checklist';
+import { getFilteredChapters } from '../../src/data/checklist';
 import { GUIDE_STEPS } from '../../src/data/guide';
 import { FLOWS } from '../../src/data/flows';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [state, setState] = useState<AppState | null>(null);
-  const [expandedGuideStep, setExpandedGuideStep] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -31,13 +31,16 @@ export default function HomeScreen() {
 
   const chapters = getFilteredChapters(state.situation, state.onboarding);
   const allItems = chapters.flatMap((ch) => ch.items);
-  const totalItems = allItems.length;
+  const guideItemCount = GUIDE_STEPS.length;
+  const totalItems = allItems.length + guideItemCount;
   const checkedItems = state.checkedItems || [];
-  const checkedCount = checkedItems.length;
+  const checkedRegular = checkedItems.filter((id) => !id.startsWith('guide-step-')).length;
+  const checkedGuide = checkedItems.filter((id) => id.startsWith('guide-step-')).length;
+  const checkedCount = checkedRegular + checkedGuide;
   const progress = totalItems > 0 ? checkedCount / totalItems : 0;
   const userName = state.onboarding?.name || '';
 
-  // Find 2 recommended activities: 1 big/hard + 1 easy
+  // Find 2 recommended activities
   const uncheckedItems = allItems.filter((item) => !checkedItems.includes(item.id));
 
   const bigTask = uncheckedItems.find(
@@ -63,12 +66,21 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Greeting */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>
-            {userName ? `Hoi ${userName}` : 'Welkom terug'}
-          </Text>
-          <Text style={styles.tagline}>Heb je het geregeld?</Text>
+        {/* Header with settings */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting}>
+              {userName ? `Hoi ${userName}` : 'Welkom terug'}
+            </Text>
+            <Text style={styles.tagline}>Heb je het geregeld?</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push('/(tabs)/profile')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* Progress Card */}
@@ -79,7 +91,7 @@ export default function HomeScreen() {
               {checkedCount}/{totalItems}
             </Text>
           </View>
-          <ProgressBar progress={progress} />
+          <ProgressBar progress={progress} color={Colors.accent} />
           {progress === 1 ? (
             <Text style={styles.progressHint}>Alles geregeld! Goed bezig.</Text>
           ) : (
@@ -163,105 +175,6 @@ export default function HomeScreen() {
           </Text>
         </Card>
 
-        {/* Chapter overview */}
-        <View style={styles.chaptersSection}>
-          <Text style={styles.sectionTitle}>Hoofdstukken</Text>
-          {chapters.map((chapter) => {
-            const chapterChecked = chapter.items.filter(
-              (i) => checkedItems.includes(i.id)
-            ).length;
-            const chapterDone = chapterChecked === chapter.items.length;
-
-            return (
-              <Card key={chapter.key} style={styles.chapterCard}>
-                <View style={styles.chapterRow}>
-                  <View style={styles.chapterInfo}>
-                    <Text style={styles.chapterLabel}>{chapter.label}</Text>
-                    <Text style={styles.chapterCount}>
-                      {chapterChecked}/{chapter.items.length} afgerond
-                    </Text>
-                  </View>
-                  {chapterDone && (
-                    <View style={styles.doneBadge}>
-                      <Text style={styles.doneBadgeText}>Klaar</Text>
-                    </View>
-                  )}
-                </View>
-              </Card>
-            );
-          })}
-        </View>
-
-        {/* Guide section */}
-        <View style={styles.guideSection}>
-          <Text style={styles.sectionTitle}>Wat te doen bij een overlijden</Text>
-          <Text style={styles.sectionSubtitle}>
-            Een stap-voor-stap gids voor nabestaanden. Druk op een stap om direct geholpen te worden.
-          </Text>
-
-          <Card style={styles.importantNote}>
-            <Text style={styles.importantNoteTitle}>Het allerbelangrijkste</Text>
-            <Text style={styles.importantNoteText}>
-              Neem de tijd om dit te verwerken. Deze stappen hoeven niet allemaal vandaag.
-            </Text>
-          </Card>
-
-          {GUIDE_STEPS.map((guideStep) => {
-            const isExpanded = expandedGuideStep === guideStep.step;
-            const hasFlow = guideStep.flowId && FLOWS[guideStep.flowId];
-
-            return (
-              <Card key={guideStep.step} style={styles.guideCard}>
-                <TouchableOpacity
-                  style={styles.guideHeader}
-                  onPress={() => setExpandedGuideStep(isExpanded ? null : guideStep.step)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.guideNumber}>
-                    <Text style={styles.guideNumberText}>{guideStep.step}</Text>
-                  </View>
-                  <View style={styles.guideInfo}>
-                    <Text style={styles.guideTitle}>{guideStep.title}</Text>
-                    <View style={styles.guideMetaRow}>
-                      <Text style={styles.guideTiming}>{guideStep.timing}</Text>
-                      <Text style={styles.guideDuration}>{guideStep.duration}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
-
-                {isExpanded && (
-                  <View style={styles.guideDetails}>
-                    <Text style={styles.guideDescription}>{guideStep.description}</Text>
-                    {guideStep.details.map((detail, i) => (
-                      <View key={i} style={styles.detailRow}>
-                        <View style={styles.detailDot} />
-                        <Text style={styles.detailText}>{detail}</Text>
-                      </View>
-                    ))}
-                    {hasFlow && (
-                      <TouchableOpacity
-                        style={styles.guideAction}
-                        onPress={() => router.push(`/flow/${guideStep.flowId}`)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.guideActionText}>Direct regelen</Text>
-                        <Text style={styles.guideActionArrow}>→</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
-              </Card>
-            );
-          })}
-
-          <View style={styles.bottomNote}>
-            <Text style={styles.bottomNoteText}>
-              Specifiek voor Nederland. Bij twijfel, raadpleeg altijd een professional.
-            </Text>
-          </View>
-        </View>
-
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
@@ -276,9 +189,25 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.lg,
   },
-  header: {
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginTop: Spacing.md,
     marginBottom: Spacing.lg,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   greeting: {
     fontSize: FontSizes.h1,
@@ -325,16 +254,9 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: Spacing.sm,
   },
-  sectionSubtitle: {
-    fontSize: FontSizes.body,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
-    marginTop: -Spacing.sm,
-    lineHeight: 24,
-  },
   bigTaskCard: {
     borderLeftWidth: 4,
-    borderLeftColor: Colors.accent,
+    borderLeftColor: Colors.pink,
     gap: Spacing.sm,
   },
   taskBadgeRow: {
@@ -343,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   importantBadge: {
-    backgroundColor: Colors.accentLight,
+    backgroundColor: Colors.pinkLight,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.full,
@@ -351,7 +273,7 @@ const styles = StyleSheet.create({
   importantBadgeText: {
     fontSize: FontSizes.caption,
     fontWeight: '600',
-    color: Colors.accent,
+    color: Colors.pink,
   },
   taskDuration: {
     fontSize: FontSizes.caption,
@@ -427,181 +349,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     backgroundColor: Colors.primaryLight,
     gap: Spacing.sm,
+    borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   sharedTitle: {
     fontSize: FontSizes.body,
     fontWeight: '700',
-    color: Colors.primaryDark,
+    color: Colors.primary,
   },
   sharedText: {
     fontSize: FontSizes.small,
-    color: Colors.primaryDark,
+    color: Colors.textSecondary,
     lineHeight: 20,
-  },
-  chaptersSection: {
-    marginBottom: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  chapterCard: {
-    padding: Spacing.md,
-  },
-  chapterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  chapterInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  chapterLabel: {
-    fontSize: FontSizes.body,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  chapterCount: {
-    fontSize: FontSizes.small,
-    color: Colors.textSecondary,
-  },
-  doneBadge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  doneBadgeText: {
-    fontSize: FontSizes.caption,
-    fontWeight: '600',
-    color: Colors.primaryDark,
-  },
-  guideSection: {
-    marginBottom: Spacing.lg,
-  },
-  importantNote: {
-    backgroundColor: Colors.warningLight,
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  importantNoteTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  importantNoteText: {
-    fontSize: FontSizes.body,
-    color: Colors.textSecondary,
-    lineHeight: 24,
-  },
-  guideCard: {
-    marginBottom: Spacing.sm,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  guideHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  guideNumber: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  guideNumberText: {
-    color: Colors.surface,
-    fontSize: FontSizes.body,
-    fontWeight: '700',
-  },
-  guideInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  guideTitle: {
-    fontSize: FontSizes.body,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  guideMetaRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  guideTiming: {
-    fontSize: FontSizes.small,
-    color: Colors.accent,
-    fontWeight: '500',
-  },
-  guideDuration: {
-    fontSize: FontSizes.small,
-    color: Colors.textSecondary,
-  },
-  expandIcon: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  guideDetails: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.separator,
-    padding: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  guideDescription: {
-    fontSize: FontSizes.body,
-    color: Colors.text,
-    lineHeight: 24,
-    marginBottom: Spacing.sm,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    alignItems: 'flex-start',
-  },
-  detailDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-    marginTop: 8,
-  },
-  detailText: {
-    fontSize: FontSizes.body,
-    color: Colors.textSecondary,
-    flex: 1,
-    lineHeight: 22,
-  },
-  guideAction: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryLight,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.sm,
-  },
-  guideActionText: {
-    fontSize: FontSizes.body,
-    fontWeight: '600',
-    color: Colors.primaryDark,
-  },
-  guideActionArrow: {
-    fontSize: FontSizes.large,
-    color: Colors.primaryDark,
-    fontWeight: '600',
-  },
-  bottomNote: {
-    backgroundColor: Colors.fill,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginTop: Spacing.md,
-  },
-  bottomNoteText: {
-    fontSize: FontSizes.small,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
   bottomPadding: {
     height: Spacing.xxl,

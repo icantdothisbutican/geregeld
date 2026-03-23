@@ -1,54 +1,64 @@
 export const Colors = {
-  // Backgrounds
-  background: '#F5F3EE',
-  surface: '#FFFFFF',
-  surfaceSecondary: '#F0EDE7',
-  fill: '#EDEAE4',
+  // Dark backgrounds
+  background: '#0B0B14',
+  surface: '#161625',
+  surfaceSecondary: '#1E1E30',
+  fill: '#252540',
 
-  // Primary - sage green (trust, calm)
-  primary: '#5B7F67',
-  primaryLight: '#EDF3EF',
-  primaryDark: '#4A6B56',
+  // Primary - teal/mint (calm, modern)
+  primary: '#2DD4BF',
+  primaryLight: 'rgba(45, 212, 191, 0.15)',
+  primaryDark: '#14B8A6',
 
-  // Accent - warm terracotta (warmth, attention)
-  accent: '#C4694A',
-  accentLight: '#FBF0EC',
+  // Accent - soft violet (warmth, attention)
+  accent: '#A78BFA',
+  accentLight: 'rgba(167, 139, 250, 0.15)',
+
+  // Secondary accent - warm pink
+  pink: '#F472B6',
+  pinkLight: 'rgba(244, 114, 182, 0.15)',
 
   // Text
-  text: '#1C1C1E',
-  textSecondary: '#6B6B73',
-  textTertiary: '#AEAEB2',
+  text: '#F1F1F6',
+  textSecondary: '#9CA3AF',
+  textTertiary: '#6B7280',
 
   // Semantic
-  warning: '#D4943A',
-  warningLight: '#FEF7E8',
-  danger: '#C44B3F',
-  dangerLight: '#FDF0EE',
-  success: '#5B7F67',
-  successLight: '#EDF3EF',
+  warning: '#FBBF24',
+  warningLight: 'rgba(251, 191, 36, 0.15)',
+  danger: '#F87171',
+  dangerLight: 'rgba(248, 113, 113, 0.15)',
+  success: '#2DD4BF',
+  successLight: 'rgba(45, 212, 191, 0.15)',
 
   // Borders & separators
-  separator: '#E0DDD7',
-  border: '#D8D5CF',
+  separator: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.12)',
 
-  // Legacy aliases (for components that still reference old names)
-  cream: '#F5F3EE',
-  green: '#5B7F67',
-  greenLight: '#EDF3EF',
-  greenDark: '#4A6B56',
-  greenBg: '#EDF3EF',
-  terracotta: '#C4694A',
-  terracottaLight: '#FBF0EC',
-  slate: '#1C1C1E',
-  slateMuted: '#6B6B73',
-  white: '#FFFFFF',
-  offWhite: '#F0EDE7',
-  warmGray: '#E0DDD7',
-  orange: '#D4943A',
-  orangeBg: '#FEF7E8',
-  red: '#C44B3F',
-  redLight: '#FBD5D2',
-  redBg: '#FDF0EE',
+  // Gradient colors
+  gradientPurple: '#7C3AED',
+  gradientTeal: '#2DD4BF',
+  gradientPink: '#EC4899',
+  gradientBlue: '#3B82F6',
+
+  // Legacy aliases
+  cream: '#0B0B14',
+  green: '#2DD4BF',
+  greenLight: 'rgba(45, 212, 191, 0.15)',
+  greenDark: '#14B8A6',
+  greenBg: 'rgba(45, 212, 191, 0.15)',
+  terracotta: '#A78BFA',
+  terracottaLight: 'rgba(167, 139, 250, 0.15)',
+  slate: '#F1F1F6',
+  slateMuted: '#9CA3AF',
+  white: '#F1F1F6',
+  offWhite: '#1E1E30',
+  warmGray: 'rgba(255, 255, 255, 0.12)',
+  orange: '#FBBF24',
+  orangeBg: 'rgba(251, 191, 36, 0.15)',
+  red: '#F87171',
+  redLight: 'rgba(248, 113, 113, 0.25)',
+  redBg: 'rgba(248, 113, 113, 0.15)',
 };
 
 export const Spacing = {

@@ -42,14 +42,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="vault"
         options={{
-          title: 'Profiel',
+          title: 'Kluis',
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'lock-closed' : 'lock-closed-outline'} size={24} color={color} />
           ),
         }}
       />
+      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="guide" options={{ href: null }} />
       <Tabs.Screen name="contacts" options={{ href: null }} />
       <Tabs.Screen name="wishes" options={{ href: null }} />

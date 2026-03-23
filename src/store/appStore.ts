@@ -13,6 +13,7 @@ export interface OnboardingData {
   preferenceMode: 'digitaal' | 'analoog' | null;
   trustedPerson: { name: string; relation: string } | null;
   uitvaartWens: 'crematie' | 'begraven' | null;
+  address: string;
 }
 
 export interface Contact {
@@ -36,6 +37,14 @@ export interface FuneralWishes {
   specialWishes: string;
 }
 
+export interface VaultItem {
+  id: string;
+  title: string;
+  category: 'document' | 'password' | 'note';
+  content: string;
+  createdAt: string;
+}
+
 export interface AppState {
   hasCompletedOnboarding: boolean;
   situation: UserSituation;
@@ -44,6 +53,9 @@ export interface AppState {
   completedFlows: string[];
   contacts: Contact[];
   funeralWishes: FuneralWishes;
+  vaultPin: string | null;
+  vaultItems: VaultItem[];
+  vaultUnlocked: boolean;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -60,6 +72,7 @@ const DEFAULT_STATE: AppState = {
     preferenceMode: null,
     trustedPerson: null,
     uitvaartWens: null,
+    address: '',
   },
   checkedItems: [],
   completedFlows: [],
@@ -74,6 +87,9 @@ const DEFAULT_STATE: AppState = {
     condolence: '',
     specialWishes: '',
   },
+  vaultPin: null,
+  vaultItems: [],
+  vaultUnlocked: false,
 };
 
 const STORAGE_KEY = '@geregeld_state_v2';

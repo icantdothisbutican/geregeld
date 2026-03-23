@@ -4,12 +4,13 @@ import { Colors, BorderRadius } from '../constants/theme';
 
 interface ProgressBarProps {
   progress: number; // 0 to 1
+  color?: string;
 }
 
-export function ProgressBar({ progress }: ProgressBarProps) {
+export function ProgressBar({ progress, color }: ProgressBarProps) {
   return (
     <View style={styles.track}>
-      <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
+      <View style={[styles.fill, { width: `${Math.round(progress * 100)}%`, backgroundColor: color || Colors.primary }]} />
     </View>
   );
 }
@@ -17,13 +18,12 @@ export function ProgressBar({ progress }: ProgressBarProps) {
 const styles = StyleSheet.create({
   track: {
     height: 8,
-    backgroundColor: Colors.warmGray,
+    backgroundColor: Colors.fill,
     borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    backgroundColor: Colors.green,
     borderRadius: BorderRadius.full,
   },
 });

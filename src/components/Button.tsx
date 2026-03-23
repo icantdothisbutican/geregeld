@@ -55,15 +55,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primary: {
-    backgroundColor: Colors.terracotta,
+    backgroundColor: Colors.accent,
   },
   secondary: {
-    backgroundColor: Colors.green,
+    backgroundColor: Colors.primary,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: Colors.slate,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
   size_large: {
     paddingVertical: Spacing.md,
@@ -81,19 +81,19 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   text: {
     fontWeight: '700',
   },
   text_primary: {
-    color: Colors.white,
+    color: '#0B0B14',
   },
   text_secondary: {
-    color: Colors.white,
+    color: '#0B0B14',
   },
   text_outline: {
-    color: Colors.slate,
+    color: Colors.text,
   },
   textSize_large: {
     fontSize: FontSizes.large,

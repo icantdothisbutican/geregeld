@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Linking,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
@@ -39,7 +39,6 @@ export default function FlowScreen() {
   const progress = (currentStep + 1) / flow.steps.length;
 
   async function handleConfirm() {
-    // Mark the item as checked
     const state = await loadState();
     const checkedItems = state.checkedItems || [];
     if (!checkedItems.includes(flow.id)) {
@@ -59,20 +58,18 @@ export default function FlowScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Text style={styles.backText}>Terug</Text>
           </TouchableOpacity>
           <View style={styles.progressSection}>
-            <ProgressBar progress={progress} />
+            <ProgressBar progress={progress} color={Colors.accent} />
             <Text style={styles.stepIndicator}>
               Stap {currentStep + 1} van {flow.steps.length}
             </Text>
           </View>
         </View>
 
-        {/* Flow title (only on first step) */}
         {currentStep === 0 && (
           <View style={styles.flowIntro}>
             <Text style={styles.flowTitle}>{flow.title}</Text>
@@ -83,7 +80,6 @@ export default function FlowScreen() {
           </View>
         )}
 
-        {/* Current step */}
         <Card style={styles.stepCard}>
           <Text style={styles.stepTitle}>{step.title}</Text>
           <Text style={styles.stepDescription}>{step.description}</Text>
@@ -121,7 +117,6 @@ export default function FlowScreen() {
           )}
         </Card>
 
-        {/* Navigation */}
         <View style={styles.navigation}>
           {step.actionType === 'confirm' ? (
             <Button
@@ -187,7 +182,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: FontSizes.body,
-    color: Colors.primary,
+    color: Colors.accent,
     fontWeight: '600',
   },
   progressSection: {
@@ -214,14 +209,14 @@ const styles = StyleSheet.create({
   },
   durationBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.accentLight,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
   },
   durationText: {
     fontSize: FontSizes.small,
-    color: Colors.primaryDark,
+    color: Colors.accent,
     fontWeight: '600',
   },
   stepCard: {
@@ -256,7 +251,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: FontSizes.body,
-    color: Colors.text,
+    color: Colors.textSecondary,
     flex: 1,
     lineHeight: 22,
   },
@@ -268,7 +263,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: 'rgba(45, 212, 191, 0.3)',
   },
   callButton: {
     backgroundColor: Colors.successLight,
@@ -276,11 +271,11 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.primaryDark,
+    color: Colors.primary,
   },
   actionArrow: {
     fontSize: FontSizes.large,
-    color: Colors.primaryDark,
+    color: Colors.primary,
     fontWeight: '600',
   },
   navigation: {
