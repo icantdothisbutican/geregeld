@@ -9,8 +9,9 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
+import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { Button } from '../../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, AppState } from '../../src/store/appStore';
@@ -82,14 +83,13 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+            <Ionicons name="arrow-back" size={22} color={Colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>Instellingen</Text>
         </View>
 
         {/* Progress overview */}
-        <Card style={styles.statsCard}>
-          <Text style={styles.statsTitle}>Voortgang</Text>
+        <GradientCard colors={GRADIENT_PRESETS.purpleTeal} style={styles.statsCardOuter}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{checkedCount}</Text>
@@ -106,51 +106,48 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Contacten</Text>
             </View>
           </View>
-        </Card>
+        </GradientCard>
 
         {/* Situation */}
         <Card style={styles.sectionCard}>
+          <Text style={styles.sectionLabel}>Persoonlijk</Text>
           <Text style={styles.sectionTitle}>Jouw situatie</Text>
           {situationItems.map((item, i) => (
-            <View key={i} style={styles.situationRow}>
+            <View key={i} style={[styles.situationRow, i > 0 && styles.situationRowBorder]}>
               <Text style={styles.situationLabel}>{item.label}</Text>
               <Text style={styles.situationValue}>{item.value}</Text>
             </View>
           ))}
           {onboarding?.trustedPerson && (
-            <View style={styles.situationRow}>
+            <View style={[styles.situationRow, styles.situationRowBorder]}>
               <Text style={styles.situationLabel}>Vertrouwenspersoon</Text>
-              <Text style={styles.situationValue}>
-                {onboarding.trustedPerson.name}
-              </Text>
+              <Text style={styles.situationValue}>{onboarding.trustedPerson.name}</Text>
             </View>
           )}
           <TouchableOpacity
             style={styles.editLink}
             onPress={() => router.push('/onboarding/questions')}
           >
-            <Text style={styles.editLinkText}>Situatie aanpassen</Text>
+            <Text style={styles.editLinkText}>Aanpassen</Text>
+            <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
           </TouchableOpacity>
         </Card>
 
         {/* Shared account */}
-        <Card style={styles.sharedCard}>
+        <GradientCard colors={GRADIENT_PRESETS.teal} style={styles.sharedCardOuter}>
           <Text style={styles.sharedTitle}>Gedeeld account</Text>
           <Text style={styles.sharedText}>
-            Deel de toegang met je partner, kinderen of vertrouwenspersoon. Iedereen kan inloggen via het web en helpen met het regelen van zaken.
+            Deel de toegang met je partner, kinderen of vertrouwenspersoon.
           </Text>
           <Button
             title="Uitnodiging versturen"
             onPress={() =>
-              Alert.alert(
-                'Binnenkort beschikbaar',
-                'De deelfunctie is nog in ontwikkeling. Binnenkort kun je een uitnodiging versturen.'
-              )
+              Alert.alert('Binnenkort beschikbaar', 'De deelfunctie is nog in ontwikkeling.')
             }
             variant="outline"
             size="medium"
           />
-        </Card>
+        </GradientCard>
 
         {/* About */}
         <Card style={styles.sectionCard}>
@@ -158,19 +155,19 @@ export default function ProfileScreen() {
           <Text style={styles.aboutText}>
             Geregeld maakt het zo eenvoudig om je zaken te regelen dat het letterlijk 10 minuten kost.
           </Text>
-          <Text style={styles.aboutSubtext}>Versie 1.0 · Gemaakt in Nederland</Text>
+          <View style={styles.aboutMeta}>
+            <Text style={styles.aboutSubtext}>Versie 1.0</Text>
+            <Text style={styles.aboutDot}>·</Text>
+            <Text style={styles.aboutSubtext}>Gemaakt in Nederland</Text>
+          </View>
           <Text style={styles.aboutSubtext}>Qi Holdings</Text>
         </Card>
 
         {/* Danger zone */}
-        <Button
-          title="Alle gegevens wissen"
-          onPress={handleReset}
-          variant="outline"
-          size="medium"
-          style={{ marginTop: Spacing.md, borderColor: Colors.danger }}
-          textStyle={{ color: Colors.danger }}
-        />
+        <TouchableOpacity style={styles.dangerButton} onPress={handleReset} activeOpacity={0.7}>
+          <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+          <Text style={styles.dangerText}>Alle gegevens wissen</Text>
+        </TouchableOpacity>
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -190,7 +187,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
     marginTop: Spacing.md,
   },
   backButton: {
@@ -205,17 +202,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSizes.h2,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
+    letterSpacing: -0.3,
   },
-  statsCard: {
-    marginBottom: Spacing.md,
-    gap: Spacing.md,
-  },
-  statsTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '700',
-    color: Colors.text,
+  statsCardOuter: {
+    marginBottom: Spacing.lg,
   },
   statsRow: {
     flexDirection: 'row',
@@ -228,31 +220,45 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: FontSizes.h1,
-    fontWeight: '700',
-    color: Colors.accent,
+    fontWeight: FontWeights.heavy,
+    color: Colors.text,
+    letterSpacing: -1,
   },
   statLabel: {
     fontSize: FontSizes.small,
     color: Colors.textSecondary,
+    fontWeight: FontWeights.medium,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: Colors.separator,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   sectionCard: {
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
+  sectionLabel: {
+    fontSize: FontSizes.caption,
+    fontWeight: FontWeights.medium,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   sectionTitle: {
     fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
+    letterSpacing: -0.2,
   },
   situationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
+  },
+  situationRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.separator,
   },
   situationLabel: {
     fontSize: FontSizes.body,
@@ -260,41 +266,67 @@ const styles = StyleSheet.create({
   },
   situationValue: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.text,
   },
   editLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
     marginTop: Spacing.sm,
   },
   editLinkText: {
     fontSize: FontSizes.body,
     color: Colors.accent,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
   },
-  sharedCard: {
+  sharedCardOuter: {
     marginBottom: Spacing.md,
-    gap: Spacing.sm,
-    backgroundColor: Colors.primaryLight,
-    borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   sharedTitle: {
     fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.primary,
+    marginBottom: Spacing.sm,
   },
   sharedText: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
+    marginBottom: Spacing.md,
   },
   aboutText: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
+  },
+  aboutMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  aboutDot: {
+    color: Colors.textTertiary,
   },
   aboutSubtext: {
     fontSize: FontSizes.small,
     color: Colors.textTertiary,
+  },
+  dangerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(248, 113, 113, 0.3)',
+    marginTop: Spacing.md,
+  },
+  dangerText: {
+    fontSize: FontSizes.body,
+    color: Colors.danger,
+    fontWeight: FontWeights.semibold,
   },
   bottomPadding: {
     height: Spacing.xxl,

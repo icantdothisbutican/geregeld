@@ -18,10 +18,11 @@ export const Colors = {
   pink: '#F472B6',
   pinkLight: 'rgba(244, 114, 182, 0.15)',
 
-  // Text
+  // Text - improved hierarchy
   text: '#F1F1F6',
   textSecondary: '#9CA3AF',
   textTertiary: '#6B7280',
+  textMuted: '#4B5563',
 
   // Semantic
   warning: '#FBBF24',
@@ -32,8 +33,8 @@ export const Colors = {
   successLight: 'rgba(45, 212, 191, 0.15)',
 
   // Borders & separators
-  separator: 'rgba(255, 255, 255, 0.08)',
-  border: 'rgba(255, 255, 255, 0.12)',
+  separator: 'rgba(255, 255, 255, 0.06)',
+  border: 'rgba(255, 255, 255, 0.10)',
 
   // Gradient colors
   gradientPurple: '#7C3AED',
@@ -53,7 +54,7 @@ export const Colors = {
   slateMuted: '#9CA3AF',
   white: '#F1F1F6',
   offWhite: '#1E1E30',
-  warmGray: 'rgba(255, 255, 255, 0.12)',
+  warmGray: 'rgba(255, 255, 255, 0.10)',
   orange: '#FBBF24',
   orangeBg: 'rgba(251, 191, 36, 0.15)',
   red: '#F87171',
@@ -71,14 +72,22 @@ export const Spacing = {
 };
 
 export const FontSizes = {
-  caption: 12,
-  small: 14,
-  body: 16,
-  large: 18,
+  caption: 11,
+  small: 13,
+  body: 15,
+  large: 17,
   h3: 20,
-  h2: 24,
-  h1: 32,
-  hero: 40,
+  h2: 26,
+  h1: 34,
+  hero: 42,
+};
+
+export const FontWeights = {
+  regular: '400' as const,
+  medium: '500' as const,
+  semibold: '600' as const,
+  bold: '700' as const,
+  heavy: '800' as const,
 };
 
 export const BorderRadius = {
@@ -87,4 +96,21 @@ export const BorderRadius = {
   lg: 16,
   xl: 24,
   full: 999,
+};
+
+export const Shadows = {
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  subtle: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
 };

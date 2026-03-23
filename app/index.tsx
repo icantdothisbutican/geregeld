@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../src/constants/theme';
 import { Button } from '../src/components/Button';
 import { loadState } from '../src/store/appStore';
 
@@ -41,19 +42,30 @@ export default function WelcomeScreen() {
           <Text style={styles.subMessage}>Niet op administratie.</Text>
         </View>
 
-        <View style={styles.valueProps}>
-          <View style={styles.valueProp}>
-            <Text style={styles.valuePropTitle}>10 min</Text>
-            <Text style={styles.valuePropText}>Klaar in 10 minuten</Text>
-          </View>
-          <View style={styles.valueProp}>
-            <Text style={styles.valuePropTitle}>Gratis</Text>
-            <Text style={styles.valuePropText}>Gratis te starten</Text>
-          </View>
-          <View style={styles.valueProp}>
-            <Text style={styles.valuePropTitle}>Veilig</Text>
-            <Text style={styles.valuePropText}>Veilig en prive</Text>
-          </View>
+        <View style={styles.valuePropsContainer}>
+          <LinearGradient
+            colors={['rgba(167, 139, 250, 0.12)', 'rgba(45, 212, 191, 0.08)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.valuePropsGradient}
+          >
+            <View style={styles.valueProps}>
+              <View style={styles.valueProp}>
+                <Text style={styles.valuePropTitle}>10 min</Text>
+                <Text style={styles.valuePropText}>Snel klaar</Text>
+              </View>
+              <View style={styles.valueDivider} />
+              <View style={styles.valueProp}>
+                <Text style={styles.valuePropTitle}>Gratis</Text>
+                <Text style={styles.valuePropText}>Geen kosten</Text>
+              </View>
+              <View style={styles.valueDivider} />
+              <View style={styles.valueProp}>
+                <Text style={styles.valuePropTitle}>Veilig</Text>
+                <Text style={styles.valuePropText}>100% prive</Text>
+              </View>
+            </View>
+          </LinearGradient>
         </View>
 
         <View style={styles.buttonSection}>
@@ -91,16 +103,17 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: FontSizes.hero,
-    fontWeight: '700',
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
-    letterSpacing: -1,
+    letterSpacing: -1.5,
   },
   tagline: {
     fontSize: FontSizes.h2,
     color: Colors.accent,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     marginTop: Spacing.sm,
     fontStyle: 'italic',
+    letterSpacing: 0.5,
   },
   messageSection: {
     alignItems: 'center',
@@ -111,35 +124,51 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 30,
-    fontWeight: '500',
+    fontWeight: FontWeights.regular,
+    letterSpacing: 0.2,
   },
   subMessage: {
     fontSize: FontSizes.h3,
     color: Colors.accent,
     textAlign: 'center',
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     marginTop: Spacing.xs,
+  },
+  valuePropsContainer: {
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.separator,
+  },
+  valuePropsGradient: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.xl,
   },
   valueProps: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingHorizontal: Spacing.sm,
+    alignItems: 'center',
   },
   valueProp: {
     alignItems: 'center',
     flex: 1,
   },
+  valueDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: Colors.separator,
+  },
   valuePropTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontSize: FontSizes.h3,
+    fontWeight: FontWeights.bold,
     color: Colors.text,
     marginBottom: Spacing.xs,
   },
   valuePropText: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: FontWeights.medium,
   },
   buttonSection: {
     alignItems: 'center',

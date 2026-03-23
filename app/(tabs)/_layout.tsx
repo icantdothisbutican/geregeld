@@ -13,6 +13,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: Colors.surface,
           borderTopColor: Colors.separator,
+          borderTopWidth: 1,
           height: 88,
           paddingBottom: 24,
           paddingTop: 8,
@@ -20,6 +21,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          letterSpacing: 0.3,
         },
       }}
     >
@@ -28,7 +30,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -37,7 +39,7 @@ export default function TabLayout() {
         options={{
           title: 'Te Doen',
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'checkbox' : 'checkbox-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'checkbox' : 'checkbox-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -46,7 +48,7 @@ export default function TabLayout() {
         options={{
           title: 'Kluis',
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'lock-closed' : 'lock-closed-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'lock-closed' : 'lock-closed-outline'} size={22} color={color} />
           ),
         }}
       />

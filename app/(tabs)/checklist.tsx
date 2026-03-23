@@ -7,10 +7,13 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
+import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { ProgressBar } from '../../src/components/ProgressBar';
+import { Ionicons } from '@expo/vector-icons';
 import { loadState, saveState, AppState } from '../../src/store/appStore';
 import { getFilteredChapters, Chapter } from '../../src/data/checklist';
 import { GUIDE_STEPS } from '../../src/data/guide';
@@ -18,9 +21,9 @@ import { FLOWS } from '../../src/data/flows';
 
 function UrgencyBadge({ urgency }: { urgency: string }) {
   const config = {
-    high: { label: 'Belangrijk', bg: Colors.dangerLight, color: Colors.danger },
-    medium: { label: 'Aanbevolen', bg: Colors.warningLight, color: Colors.warning },
-    low: { label: 'Optioneel', bg: Colors.primaryLight, color: Colors.primaryDark },
+    high: { label: 'Belangrijk', bg: 'rgba(248, 113, 113, 0.15)', color: Colors.danger },
+    medium: { label: 'Aanbevolen', bg: 'rgba(251, 191, 36, 0.15)', color: Colors.warning },
+    low: { label: 'Optioneel', bg: 'rgba(45, 212, 191, 0.15)', color: Colors.primary },
   }[urgency] || { label: '', bg: Colors.fill, color: Colors.text };
 
   return (
@@ -86,7 +89,10 @@ export default function ChecklistScreen() {
 
   const checkedItems = state.checkedItems || [];
   const totalItems = allChapters.reduce((sum, ch) => sum + ch.items.length, 0);
-  const progress = totalItems > 0 ? checkedItems.length / totalItems : 0;
+  const checkedCount = checkedItems.filter((id) =>
+    allChapters.some((ch) => ch.items.some((item) => item.id === id))
+  ).length;
+  const progress = totalItems > 0 ? checkedCount / totalItems : 0;
 
   async function toggleItem(itemId: string) {
     const newChecked = checkedItems.includes(itemId)
@@ -97,7 +103,6 @@ export default function ChecklistScreen() {
   }
 
   function navigateToFlow(itemId: string) {
-    // Handle guide step flows
     if (itemId.startsWith('guide-step-')) {
       const stepNum = parseInt(itemId.replace('guide-step-', ''));
       const guideStep = GUIDE_STEPS.find((s) => s.step === stepNum);
@@ -114,60 +119,96 @@ export default function ChecklistScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header */}
         <View style={styles.header}>
+          <Text style={styles.headerLabel}>Checklist</Text>
           <Text style={styles.title}>Te Doen</Text>
-          <Text style={styles.subtitle}>
-            {totalItems - checkedItems.length} van {totalItems} dingen om te regelen
-          </Text>
-          <ProgressBar progress={progress} />
-          {progress === 1 && (
-            <View style={styles.completeBanner}>
-              <Text style={styles.completeText}>Alles geregeld! Goed bezig.</Text>
-            </View>
-          )}
         </View>
 
-        {allChapters.map((chapter) => {
+        {/* Progress summary */}
+        <GradientCard colors={GRADIENT_PRESETS.accent} style={styles.progressCard}>
+          <View style={styles.progressRow}>
+            <View>
+              <Text style={styles.progressPercent}>{Math.round(progress * 100)}%</Text>
+              <Text style={styles.progressHint}>
+                {totalItems - checkedCount} van {totalItems} open
+              </Text>
+            </View>
+            <View style={styles.progressBarWrap}>
+              <ProgressBar progress={progress} color={Colors.accent} />
+            </View>
+          </View>
+          {progress === 1 && (
+            <View style={styles.completeBanner}>
+              <Text style={styles.completeText}>Alles geregeld!</Text>
+            </View>
+          )}
+        </GradientCard>
+
+        {/* Chapters */}
+        {allChapters.map((chapter, chapterIndex) => {
           const isExpanded = expandedChapter === chapter.key;
           const chapterChecked = chapter.items.filter((i) => checkedItems.includes(i.id)).length;
           const chapterDone = chapterChecked === chapter.items.length;
           const isGuide = chapter.key === 'overlijden-gids';
 
+          // Alternate gradient colors for visual variety
+          const chapterGradients = [
+            GRADIENT_PRESETS.purple,
+            GRADIENT_PRESETS.teal,
+            GRADIENT_PRESETS.pinkPurple,
+            GRADIENT_PRESETS.tealGreen,
+            GRADIENT_PRESETS.warmSunset,
+            GRADIENT_PRESETS.purpleTeal,
+          ];
+          const gradientColors = isGuide
+            ? GRADIENT_PRESETS.pinkPurple
+            : chapterGradients[chapterIndex % chapterGradients.length];
+
           return (
-            <Card key={chapter.key} style={[styles.chapterCard, isGuide && styles.guideChapterCard]}>
+            <View key={chapter.key} style={styles.chapterWrapper}>
               <TouchableOpacity
-                style={styles.chapterHeader}
-                onPress={() => setExpandedChapter(isExpanded ? null : chapter.key)}
                 activeOpacity={0.7}
+                onPress={() => setExpandedChapter(isExpanded ? null : chapter.key)}
               >
-                <View style={styles.chapterTitleContent}>
-                  <Text style={[styles.chapterLabel, isGuide && styles.guideChapterLabel]}>{chapter.label}</Text>
-                  <Text style={styles.chapterDesc}>{chapter.description}</Text>
-                </View>
-                <View style={styles.chapterMeta}>
-                  {chapterDone ? (
-                    <View style={styles.doneBadge}>
-                      <Text style={styles.doneBadgeText}>Klaar</Text>
+                <GradientCard colors={gradientColors}>
+                  <View style={styles.chapterHeader}>
+                    <View style={styles.chapterTitleContent}>
+                      <Text style={styles.chapterLabel}>{chapter.label}</Text>
+                      <Text style={styles.chapterDesc}>{chapter.description}</Text>
                     </View>
-                  ) : (
-                    <Text style={styles.chapterCount}>
-                      {chapterChecked}/{chapter.items.length}
-                    </Text>
-                  )}
-                  <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
-                </View>
+                    <View style={styles.chapterMeta}>
+                      {chapterDone ? (
+                        <View style={styles.doneBadge}>
+                          <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
+                          <Text style={styles.doneBadgeText}>Klaar</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.chapterCount}>
+                          {chapterChecked}/{chapter.items.length}
+                        </Text>
+                      )}
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color={Colors.textTertiary}
+                      />
+                    </View>
+                  </View>
+                </GradientCard>
               </TouchableOpacity>
 
               {isExpanded && (
-                <View>
+                <Card style={styles.expandedContent}>
                   {isGuide && (
                     <View style={styles.guideNote}>
+                      <Ionicons name="heart-outline" size={16} color={Colors.warning} />
                       <Text style={styles.guideNoteText}>
                         Neem de tijd. Deze stappen hoeven niet allemaal vandaag.
                       </Text>
                     </View>
                   )}
-                  {chapter.items.map((item) => {
+                  {chapter.items.map((item, idx) => {
                     const isChecked = checkedItems.includes(item.id);
                     const hasFlow = item.hasFlow && (
                       item.id.startsWith('guide-step-')
@@ -176,14 +217,18 @@ export default function ChecklistScreen() {
                     );
 
                     return (
-                      <View key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]}>
+                      <View key={item.id} style={[
+                        styles.checkItem,
+                        idx > 0 && styles.checkItemBorder,
+                        isChecked && styles.checkItemDone,
+                      ]}>
                         <TouchableOpacity
                           style={styles.checkRow}
                           onPress={() => toggleItem(item.id)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-                            {isChecked && <Text style={styles.checkmark}>✓</Text>}
+                            {isChecked && <Ionicons name="checkmark" size={16} color="#0B0B14" />}
                           </View>
                           <View style={styles.checkContent}>
                             <Text style={[styles.checkTitle, isChecked && styles.checkTitleDone]}>
@@ -211,15 +256,15 @@ export default function ChecklistScreen() {
                             <Text style={styles.flowButtonText}>
                               {item.actionLabel || 'Direct regelen'}
                             </Text>
-                            <Text style={styles.flowButtonArrow}>→</Text>
+                            <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
                           </TouchableOpacity>
                         )}
                       </View>
                     );
                   })}
-                </View>
+                </Card>
               )}
-            </Card>
+            </View>
           );
         })}
 
@@ -245,57 +290,75 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: Spacing.lg,
-    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  headerLabel: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
   },
   title: {
     fontSize: FontSizes.h1,
-    fontWeight: '700',
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
-    marginTop: Spacing.md,
+    letterSpacing: -0.5,
+    marginTop: Spacing.xs,
   },
-  subtitle: {
-    fontSize: FontSizes.body,
-    color: Colors.textSecondary,
+  progressCard: {
+    marginBottom: Spacing.xl,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  progressPercent: {
+    fontSize: FontSizes.h1,
+    fontWeight: FontWeights.heavy,
+    color: Colors.text,
+    letterSpacing: -1,
+  },
+  progressHint: {
+    fontSize: FontSizes.small,
+    color: Colors.textTertiary,
+    marginTop: 2,
+  },
+  progressBarWrap: {
+    flex: 1,
   },
   completeBanner: {
-    backgroundColor: Colors.primaryLight,
-    padding: Spacing.md,
+    marginTop: Spacing.md,
+    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    padding: Spacing.sm + 2,
     borderRadius: BorderRadius.md,
-    marginTop: Spacing.sm,
   },
   completeText: {
     fontSize: FontSizes.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     textAlign: 'center',
   },
-  chapterCard: {
+  chapterWrapper: {
     marginBottom: Spacing.md,
-    padding: 0,
-    overflow: 'hidden',
-  },
-  guideChapterCard: {
-    borderColor: 'rgba(167, 139, 250, 0.3)',
-    borderWidth: 1,
+    gap: 0,
   },
   chapterHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.lg,
   },
   chapterTitleContent: {
     flex: 1,
-    gap: 2,
+    gap: 3,
     marginRight: Spacing.md,
   },
   chapterLabel: {
     fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
-  },
-  guideChapterLabel: {
-    color: Colors.accent,
+    letterSpacing: -0.2,
   },
   chapterDesc: {
     fontSize: FontSizes.small,
@@ -307,55 +370,67 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   chapterCount: {
-    fontSize: FontSizes.small,
+    fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
   },
   doneBadge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
   },
   doneBadgeText: {
     fontSize: FontSizes.caption,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.primary,
   },
-  expandIcon: {
-    fontSize: 12,
-    color: Colors.textSecondary,
+  expandedContent: {
+    marginTop: -Spacing.sm,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    padding: 0,
+    overflow: 'hidden',
   },
   guideNote: {
-    backgroundColor: Colors.warningLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.separator,
+    backgroundColor: 'rgba(251, 191, 36, 0.08)',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.separator,
   },
   guideNoteText: {
     fontSize: FontSizes.small,
     color: Colors.warning,
-    fontWeight: '500',
+    fontWeight: FontWeights.medium,
     fontStyle: 'italic',
+    flex: 1,
   },
   checkItem: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.separator,
     padding: Spacing.lg,
   },
+  checkItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.separator,
+  },
   checkItemDone: {
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: 'rgba(45, 212, 191, 0.05)',
   },
   checkRow: {
     flexDirection: 'row',
     gap: Spacing.md,
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 1.5,
     borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
@@ -365,23 +440,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  checkmark: {
-    color: '#0B0B14',
-    fontSize: 16,
-    fontWeight: '700',
-  },
   checkContent: {
     flex: 1,
     gap: Spacing.xs,
   },
   checkTitle: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.text,
   },
   checkTitleDone: {
     textDecorationLine: 'line-through',
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
   },
   checkDescription: {
     fontSize: FontSizes.small,
@@ -393,6 +463,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     alignItems: 'center',
     flexWrap: 'wrap',
+    marginTop: Spacing.xs,
   },
   badge: {
     alignSelf: 'flex-start',
@@ -402,11 +473,11 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: FontSizes.caption,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
   },
   itemDuration: {
     fontSize: FontSizes.caption,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
   },
   timingBadge: {
     backgroundColor: Colors.accentLight,
@@ -416,28 +487,24 @@ const styles = StyleSheet.create({
   },
   timingText: {
     fontSize: FontSizes.caption,
-    fontWeight: '500',
+    fontWeight: FontWeights.medium,
     color: Colors.accent,
   },
   flowButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.sm,
-    marginLeft: 44,
+    marginLeft: 42,
     borderWidth: 1,
     borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   flowButtonText: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-  flowButtonArrow: {
-    fontSize: FontSizes.large,
+    fontWeight: FontWeights.semibold,
     color: Colors.primary,
   },
   bottomNote: {
@@ -448,7 +515,7 @@ const styles = StyleSheet.create({
   },
   bottomNoteText: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     textAlign: 'center',
     fontStyle: 'italic',
   },

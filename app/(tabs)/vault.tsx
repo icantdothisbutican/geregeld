@@ -10,8 +10,9 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
+import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { Button } from '../../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, saveState, AppState, VaultItem, generateId } from '../../src/store/appStore';
@@ -113,7 +114,7 @@ export default function VaultScreen() {
     ]);
   }
 
-  const getCategoryIcon = (cat: string) => {
+  const getCategoryIcon = (cat: string): any => {
     switch (cat) {
       case 'document': return 'document-text-outline';
       case 'password': return 'key-outline';
@@ -131,30 +132,41 @@ export default function VaultScreen() {
     }
   };
 
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case 'document': return Colors.primary;
+      case 'password': return Colors.pink;
+      case 'note': return Colors.warning;
+      default: return Colors.textSecondary;
+    }
+  };
+
   // PIN setup screen
   if (isSettingPin) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.lockScreen}>
-          <View style={styles.lockIconContainer}>
-            <Ionicons name="shield-checkmark" size={64} color={Colors.accent} />
-          </View>
-          <Text style={styles.lockTitle}>Kluis beveiligen</Text>
-          <Text style={styles.lockSubtitle}>
-            {pinStep === 'enter'
-              ? 'Kies een sterk wachtwoord (min. 6 tekens) om je gevoelige documenten te beschermen.'
-              : 'Voer je wachtwoord nogmaals in ter bevestiging.'}
-          </Text>
-          <TextInput
-            style={styles.pinInput}
-            placeholder={pinStep === 'enter' ? 'Kies wachtwoord' : 'Bevestig wachtwoord'}
-            placeholderTextColor={Colors.textTertiary}
-            value={pinInput}
-            onChangeText={setPinInput}
-            secureTextEntry
-            autoFocus
-          />
-          <Button title={pinStep === 'enter' ? 'Volgende' : 'Kluis beveiligen'} onPress={handleSetPin} />
+          <GradientCard colors={GRADIENT_PRESETS.purpleTeal} style={styles.lockCardOuter}>
+            <View style={styles.lockIconContainer}>
+              <Ionicons name="shield-checkmark" size={48} color={Colors.accent} />
+            </View>
+            <Text style={styles.lockTitle}>Kluis beveiligen</Text>
+            <Text style={styles.lockSubtitle}>
+              {pinStep === 'enter'
+                ? 'Kies een sterk wachtwoord (min. 6 tekens) om je gevoelige documenten te beschermen.'
+                : 'Voer je wachtwoord nogmaals in ter bevestiging.'}
+            </Text>
+            <TextInput
+              style={styles.pinInput}
+              placeholder={pinStep === 'enter' ? 'Kies wachtwoord' : 'Bevestig wachtwoord'}
+              placeholderTextColor={Colors.textTertiary}
+              value={pinInput}
+              onChangeText={setPinInput}
+              secureTextEntry
+              autoFocus
+            />
+            <Button title={pinStep === 'enter' ? 'Volgende' : 'Kluis beveiligen'} onPress={handleSetPin} />
+          </GradientCard>
         </View>
       </SafeAreaView>
     );
@@ -165,24 +177,26 @@ export default function VaultScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.lockScreen}>
-          <View style={styles.lockIconContainer}>
-            <Ionicons name="lock-closed" size={64} color={Colors.accent} />
-          </View>
-          <Text style={styles.lockTitle}>Kluis vergrendeld</Text>
-          <Text style={styles.lockSubtitle}>
-            Voer je wachtwoord in om toegang te krijgen tot je gevoelige documenten.
-          </Text>
-          <TextInput
-            style={styles.pinInput}
-            placeholder="Wachtwoord"
-            placeholderTextColor={Colors.textTertiary}
-            value={pinInput}
-            onChangeText={setPinInput}
-            secureTextEntry
-            autoFocus
-            onSubmitEditing={handleUnlock}
-          />
-          <Button title="Ontgrendelen" onPress={handleUnlock} />
+          <GradientCard colors={GRADIENT_PRESETS.purple} style={styles.lockCardOuter}>
+            <View style={styles.lockIconContainer}>
+              <Ionicons name="lock-closed" size={48} color={Colors.accent} />
+            </View>
+            <Text style={styles.lockTitle}>Kluis</Text>
+            <Text style={styles.lockSubtitle}>
+              Voer je wachtwoord in om toegang te krijgen.
+            </Text>
+            <TextInput
+              style={styles.pinInput}
+              placeholder="Wachtwoord"
+              placeholderTextColor={Colors.textTertiary}
+              value={pinInput}
+              onChangeText={setPinInput}
+              secureTextEntry
+              autoFocus
+              onSubmitEditing={handleUnlock}
+            />
+            <Button title="Ontgrendelen" onPress={handleUnlock} />
+          </GradientCard>
         </View>
       </SafeAreaView>
     );
@@ -200,11 +214,11 @@ export default function VaultScreen() {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <View>
+              <Text style={styles.headerLabel}>Beveiligd</Text>
               <Text style={styles.title}>Kluis</Text>
-              <Text style={styles.subtitle}>Je gevoelige documenten, veilig bewaard</Text>
             </View>
             <TouchableOpacity onPress={() => setIsUnlocked(false)} style={styles.lockButton}>
-              <Ionicons name="lock-open-outline" size={24} color={Colors.accent} />
+              <Ionicons name="lock-open-outline" size={20} color={Colors.accent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -212,7 +226,7 @@ export default function VaultScreen() {
         {/* Add item */}
         {addingItem ? (
           <Card style={styles.addCard}>
-            <Text style={styles.addTitle}>Nieuw item toevoegen</Text>
+            <Text style={styles.addTitle}>Nieuw item</Text>
             <View style={styles.categoryRow}>
               {(['document', 'password', 'note'] as const).map((cat) => (
                 <TouchableOpacity
@@ -220,7 +234,7 @@ export default function VaultScreen() {
                   style={[styles.categoryChip, newCategory === cat && styles.categoryChipActive]}
                   onPress={() => setNewCategory(cat)}
                 >
-                  <Ionicons name={getCategoryIcon(cat) as any} size={16} color={newCategory === cat ? Colors.primary : Colors.textSecondary} />
+                  <Ionicons name={getCategoryIcon(cat)} size={14} color={newCategory === cat ? Colors.primary : Colors.textTertiary} />
                   <Text style={[styles.categoryChipText, newCategory === cat && styles.categoryChipTextActive]}>
                     {getCategoryLabel(cat)}
                   </Text>
@@ -236,7 +250,7 @@ export default function VaultScreen() {
             />
             <TextInput
               style={[styles.input, styles.contentInput]}
-              placeholder="Inhoud (bijv. wachtwoord, notitie)"
+              placeholder="Inhoud"
               placeholderTextColor={Colors.textTertiary}
               value={newContent}
               onChangeText={setNewContent}
@@ -248,87 +262,53 @@ export default function VaultScreen() {
             </View>
           </Card>
         ) : (
-          <TouchableOpacity style={styles.addButton} onPress={() => setAddingItem(true)} activeOpacity={0.7}>
-            <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
+          <TouchableOpacity style={styles.addButtonWrap} onPress={() => setAddingItem(true)} activeOpacity={0.7}>
+            <Ionicons name="add-circle-outline" size={22} color={Colors.primary} />
             <Text style={styles.addButtonText}>Item toevoegen</Text>
           </TouchableOpacity>
         )}
 
         {items.length === 0 && !addingItem && (
-          <Card style={styles.emptyCard}>
-            <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
-            <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
-            <Text style={styles.emptyText}>
-              Bewaar hier je gevoelige documenten, wachtwoorden en notities. Alles is beveiligd met je persoonlijke wachtwoord.
-            </Text>
-          </Card>
+          <GradientCard colors={GRADIENT_PRESETS.subtle} style={styles.emptyCardOuter}>
+            <View style={styles.emptyContent}>
+              <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
+              <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
+              <Text style={styles.emptyText}>
+                Bewaar hier je gevoelige documenten, wachtwoorden en notities.
+              </Text>
+            </View>
+          </GradientCard>
         )}
 
-        {documents.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Documenten</Text>
-            {documents.map((item) => (
+        {[
+          { title: 'Documenten', items: documents, cat: 'document' },
+          { title: 'Wachtwoorden', items: passwords, cat: 'password' },
+          { title: 'Notities', items: notes, cat: 'note' },
+        ].filter((s) => s.items.length > 0).map((section) => (
+          <View key={section.cat} style={styles.section}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            {section.items.map((item) => (
               <Card key={item.id} style={styles.itemCard}>
                 <View style={styles.itemRow}>
-                  <View style={styles.itemIcon}>
-                    <Ionicons name="document-text-outline" size={20} color={Colors.primary} />
+                  <View style={[styles.itemIcon, { backgroundColor: `${getCategoryColor(item.category)}15` }]}>
+                    <Ionicons name={getCategoryIcon(item.category)} size={18} color={getCategoryColor(item.category)} />
                   </View>
                   <View style={styles.itemContent}>
                     <Text style={styles.itemTitle}>{item.title}</Text>
-                    {item.content ? <Text style={styles.itemText}>{item.content}</Text> : null}
+                    {item.content ? (
+                      <Text style={styles.itemText}>
+                        {item.category === 'password' ? '••••••••' : item.content}
+                      </Text>
+                    ) : null}
                   </View>
-                  <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
-                    <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+                  <TouchableOpacity onPress={() => handleDeleteItem(item.id)} style={styles.deleteBtn}>
+                    <Ionicons name="trash-outline" size={18} color={Colors.danger} />
                   </TouchableOpacity>
                 </View>
               </Card>
             ))}
           </View>
-        )}
-
-        {passwords.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Wachtwoorden</Text>
-            {passwords.map((item) => (
-              <Card key={item.id} style={styles.itemCard}>
-                <View style={styles.itemRow}>
-                  <View style={styles.itemIcon}>
-                    <Ionicons name="key-outline" size={20} color={Colors.pink} />
-                  </View>
-                  <View style={styles.itemContent}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    {item.content ? <Text style={styles.itemText}>••••••••</Text> : null}
-                  </View>
-                  <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
-                    <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            ))}
-          </View>
-        )}
-
-        {notes.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notities</Text>
-            {notes.map((item) => (
-              <Card key={item.id} style={styles.itemCard}>
-                <View style={styles.itemRow}>
-                  <View style={styles.itemIcon}>
-                    <Ionicons name="create-outline" size={20} color={Colors.warning} />
-                  </View>
-                  <View style={styles.itemContent}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    {item.content ? <Text style={styles.itemText}>{item.content}</Text> : null}
-                  </View>
-                  <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
-                    <Ionicons name="trash-outline" size={20} color={Colors.danger} />
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            ))}
-          </View>
-        )}
+        ))}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -353,74 +333,87 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  headerLabel: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    color: Colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
   title: {
     fontSize: FontSizes.h1,
-    fontWeight: '700',
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
-  },
-  subtitle: {
-    fontSize: FontSizes.body,
-    color: Colors.textSecondary,
+    letterSpacing: -0.5,
     marginTop: Spacing.xs,
   },
   lockButton: {
-    padding: Spacing.sm,
-    marginTop: Spacing.xs,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.accentLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   lockScreen: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.xl,
-    gap: Spacing.lg,
+    padding: Spacing.lg,
+  },
+  lockCardOuter: {
+    // spacing handled by GradientCard
   },
   lockIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.accentLight,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(167, 139, 250, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
   },
   lockTitle: {
     fontSize: FontSizes.h1,
-    fontWeight: '700',
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   lockSubtitle: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.lg,
   },
   pinInput: {
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     fontSize: FontSizes.large,
     color: Colors.text,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: Colors.border,
     textAlign: 'center',
-    width: '100%',
+    marginBottom: Spacing.md,
   },
-  addButton: {
+  addButtonWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: 'rgba(45, 212, 191, 0.08)',
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.3)',
+    borderColor: 'rgba(45, 212, 191, 0.2)',
     borderStyle: 'dashed',
   },
   addButtonText: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.primary,
   },
   addCard: {
@@ -429,7 +422,7 @@ const styles = StyleSheet.create({
   },
   addTitle: {
     fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
   },
   categoryRow: {
@@ -448,13 +441,13 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   categoryChipActive: {
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
     borderColor: Colors.primary,
   },
   categoryChipText: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+    color: Colors.textTertiary,
+    fontWeight: FontWeights.medium,
   },
   categoryChipTextActive: {
     color: Colors.primary,
@@ -475,30 +468,35 @@ const styles = StyleSheet.create({
   addButtons: {
     gap: Spacing.sm,
   },
-  emptyCard: {
+  emptyCardOuter: {
+    // spacing
+  },
+  emptyContent: {
     alignItems: 'center',
     gap: Spacing.md,
-    paddingVertical: Spacing.xxl,
+    paddingVertical: Spacing.xl,
   },
   emptyTitle: {
     fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
   },
   emptyText: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
   },
   section: {
     marginBottom: Spacing.lg,
     gap: Spacing.sm,
   },
   sectionTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '700',
-    color: Colors.text,
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginBottom: Spacing.xs,
   },
   itemCard: {
@@ -513,7 +511,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.fill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -523,12 +520,15 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.text,
   },
   itemText: {
     fontSize: FontSizes.small,
     color: Colors.textSecondary,
+  },
+  deleteBtn: {
+    padding: Spacing.sm,
   },
   bottomPadding: {
     height: Spacing.xxl,

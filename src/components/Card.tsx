@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, BorderRadius, Spacing } from '../constants/theme';
+import { Colors, BorderRadius, Spacing, Shadows } from '../constants/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -18,5 +18,6 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.separator,
+    ...Shadows.subtle,
   },
 });

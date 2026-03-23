@@ -9,8 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Button } from '../../src/components/Button';
 import { ChoiceButton } from '../../src/components/ChoiceButton';
 import { ProgressBar } from '../../src/components/ProgressBar';
@@ -131,8 +132,8 @@ export default function OnboardingQuestions() {
   function canProceed(): boolean {
     switch (step) {
       case 0: return name.trim().length > 0;
-      case 5: return true; // address is optional
-      case 8: return true; // trusted person is optional
+      case 5: return true;
+      case 8: return true;
       default: return getCurrentAnswer() !== null;
     }
   }
@@ -297,9 +298,14 @@ export default function OnboardingQuestions() {
               )}
 
               {hint && (
-                <View style={styles.hintBox}>
+                <LinearGradient
+                  colors={['rgba(167, 139, 250, 0.12)', 'rgba(45, 212, 191, 0.08)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.hintBox}
+                >
                   <Text style={styles.hintText}>{hint}</Text>
-                </View>
+                </LinearGradient>
               )}
             </View>
 
@@ -348,8 +354,9 @@ const styles = StyleSheet.create({
   },
   stepText: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     textAlign: 'center',
+    fontWeight: FontWeights.medium,
   },
   questionSection: {
     alignItems: 'center',
@@ -358,19 +365,20 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: FontSizes.large,
     color: Colors.accent,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
   },
   question: {
     fontSize: FontSizes.h1,
-    fontWeight: '700',
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
   },
   answerSection: {
     gap: Spacing.md,
@@ -387,7 +395,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     fontSize: FontSizes.large,
     color: Colors.text,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: Colors.border,
     textAlign: 'center',
   },
@@ -395,16 +403,17 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   hintBox: {
-    backgroundColor: Colors.accentLight,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginTop: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.15)',
   },
   hintText: {
     fontSize: FontSizes.small,
     color: Colors.accent,
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: FontWeights.medium,
     lineHeight: 20,
   },
   buttonSection: {

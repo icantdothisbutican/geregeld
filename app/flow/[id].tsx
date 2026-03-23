@@ -9,10 +9,12 @@ import {
   Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
+import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { Button } from '../../src/components/Button';
 import { ProgressBar } from '../../src/components/ProgressBar';
+import { Ionicons } from '@expo/vector-icons';
 import { FLOWS, FlowStep } from '../../src/data/flows';
 import { loadState, saveState } from '../../src/store/appStore';
 
@@ -60,7 +62,7 @@ export default function FlowScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backText}>Terug</Text>
+            <Ionicons name="arrow-back" size={22} color={Colors.text} />
           </TouchableOpacity>
           <View style={styles.progressSection}>
             <ProgressBar progress={progress} color={Colors.accent} />
@@ -71,13 +73,14 @@ export default function FlowScreen() {
         </View>
 
         {currentStep === 0 && (
-          <View style={styles.flowIntro}>
+          <GradientCard colors={GRADIENT_PRESETS.purpleTeal} style={styles.flowIntroCard}>
             <Text style={styles.flowTitle}>{flow.title}</Text>
             <Text style={styles.flowSubtitle}>{flow.subtitle}</Text>
             <View style={styles.durationBadge}>
+              <Ionicons name="time-outline" size={14} color={Colors.accent} />
               <Text style={styles.durationText}>{flow.duration}</Text>
             </View>
-          </View>
+          </GradientCard>
         )}
 
         <Card style={styles.stepCard}>
@@ -102,7 +105,7 @@ export default function FlowScreen() {
               activeOpacity={0.7}
             >
               <Text style={styles.actionButtonText}>{step.actionLabel}</Text>
-              <Text style={styles.actionArrow}>→</Text>
+              <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
             </TouchableOpacity>
           )}
 
@@ -112,6 +115,7 @@ export default function FlowScreen() {
               onPress={() => handleAction(step)}
               activeOpacity={0.7}
             >
+              <Ionicons name="call-outline" size={16} color={Colors.primary} />
               <Text style={styles.actionButtonText}>{step.actionLabel}</Text>
             </TouchableOpacity>
           )}
@@ -177,47 +181,55 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.separator,
+    alignItems: 'center',
+    justifyContent: 'center',
     alignSelf: 'flex-start',
-    paddingVertical: Spacing.xs,
-  },
-  backText: {
-    fontSize: FontSizes.body,
-    color: Colors.accent,
-    fontWeight: '600',
   },
   progressSection: {
     gap: Spacing.sm,
   },
   stepIndicator: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
     textAlign: 'center',
+    fontWeight: FontWeights.medium,
   },
-  flowIntro: {
+  flowIntroCard: {
     marginBottom: Spacing.lg,
-    gap: Spacing.sm,
   },
   flowTitle: {
     fontSize: FontSizes.h1,
-    fontWeight: '700',
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
+    letterSpacing: -0.5,
+    marginBottom: Spacing.sm,
   },
   flowSubtitle: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
+    marginBottom: Spacing.md,
   },
   durationBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: Colors.accentLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: 'rgba(167, 139, 250, 0.15)',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
   },
   durationText: {
     fontSize: FontSizes.small,
     color: Colors.accent,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
   },
   stepCard: {
     gap: Spacing.md,
@@ -225,13 +237,14 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: FontSizes.h3,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
+    letterSpacing: -0.2,
   },
   stepDescription: {
     fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   detailsList: {
     gap: Spacing.sm,
@@ -247,7 +260,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.primary,
-    marginTop: 8,
+    marginTop: 7,
   },
   detailText: {
     fontSize: FontSizes.body,
@@ -259,24 +272,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.3)',
+    borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   callButton: {
-    backgroundColor: Colors.successLight,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
+    justifyContent: 'flex-start',
+    gap: Spacing.sm,
   },
   actionButtonText: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.primary,
-  },
-  actionArrow: {
-    fontSize: FontSizes.large,
-    color: Colors.primary,
-    fontWeight: '600',
   },
   navigation: {
     gap: Spacing.sm,

@@ -7,9 +7,11 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius, Shadows } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
+import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, AppState } from '../../src/store/appStore';
@@ -40,7 +42,6 @@ export default function HomeScreen() {
   const progress = totalItems > 0 ? checkedCount / totalItems : 0;
   const userName = state.onboarding?.name || '';
 
-  // Find 2 recommended activities
   const uncheckedItems = allItems.filter((item) => !checkedItems.includes(item.id));
 
   const bigTask = uncheckedItems.find(
@@ -63,13 +64,15 @@ export default function HomeScreen() {
     }
   }
 
+  const progressPercent = Math.round(progress * 100);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header with settings */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>
+            <Text style={styles.greetingLabel}>
               {userName ? `Hoi ${userName}` : 'Welkom terug'}
             </Text>
             <Text style={styles.tagline}>Heb je het geregeld?</Text>
@@ -79,39 +82,46 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/profile')}
             activeOpacity={0.7}
           >
-            <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
+            <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        {/* Progress Card */}
-        <Card style={styles.progressCard}>
+        {/* Progress Card - with gradient */}
+        <GradientCard
+          colors={GRADIENT_PRESETS.purpleTeal}
+          style={styles.progressCardOuter}
+        >
           <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Jouw voortgang</Text>
-            <Text style={styles.progressCount}>
-              {checkedCount}/{totalItems}
-            </Text>
+            <View>
+              <Text style={styles.progressLabel}>Jouw voortgang</Text>
+              <Text style={styles.progressPercent}>{progressPercent}%</Text>
+            </View>
+            <View style={styles.progressCountBubble}>
+              <Text style={styles.progressCountText}>
+                {checkedCount}/{totalItems}
+              </Text>
+            </View>
           </View>
-          <ProgressBar progress={progress} color={Colors.accent} />
-          {progress === 1 ? (
-            <Text style={styles.progressHint}>Alles geregeld! Goed bezig.</Text>
-          ) : (
-            <Text style={styles.progressHint}>
-              Nog {totalItems - checkedCount} {totalItems - checkedCount === 1 ? 'ding' : 'dingen'} te regelen
-            </Text>
-          )}
-        </Card>
+          <ProgressBar progress={progress} color={Colors.primary} />
+          <Text style={styles.progressHint}>
+            {progress === 1
+              ? 'Alles geregeld! Goed bezig.'
+              : `Nog ${totalItems - checkedCount} ${totalItems - checkedCount === 1 ? 'ding' : 'dingen'} te regelen`}
+          </Text>
+        </GradientCard>
 
-        {/* Two recommended activities */}
+        {/* Recommended activities */}
         {(bigTask || easyTask) && (
-          <View style={styles.recommendationsSection}>
-            <Text style={styles.sectionTitle}>Aanbevolen voor jou</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Aanbevolen</Text>
+            <Text style={styles.sectionTitle}>Volgende stappen</Text>
 
             {bigTask && (
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => bigTask.hasFlow ? navigateToFlow(bigTask.id) : null}
               >
-                <Card style={styles.bigTaskCard}>
+                <GradientCard colors={GRADIENT_PRESETS.pinkPurple} style={styles.taskCardOuter}>
                   <View style={styles.taskBadgeRow}>
                     <View style={styles.importantBadge}>
                       <Text style={styles.importantBadgeText}>Belangrijk</Text>
@@ -125,10 +135,10 @@ export default function HomeScreen() {
                       <Text style={styles.startFlowText}>
                         {bigTask.actionLabel || 'Start'}
                       </Text>
-                      <Text style={styles.startFlowArrow}>→</Text>
+                      <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
                     </View>
                   )}
-                </Card>
+                </GradientCard>
               </TouchableOpacity>
             )}
 
@@ -137,7 +147,7 @@ export default function HomeScreen() {
                 activeOpacity={0.7}
                 onPress={() => easyTask.hasFlow ? navigateToFlow(easyTask.id) : null}
               >
-                <Card style={styles.easyTaskCard}>
+                <GradientCard colors={GRADIENT_PRESETS.tealGreen} style={styles.taskCardOuter}>
                   <View style={styles.taskBadgeRow}>
                     <View style={styles.easyBadge}>
                       <Text style={styles.easyBadgeText}>Snel te doen</Text>
@@ -146,7 +156,7 @@ export default function HomeScreen() {
                   </View>
                   <Text style={styles.easyTaskTitle}>{easyTask.title}</Text>
                   <Text style={styles.taskDescription}>{easyTask.description}</Text>
-                </Card>
+                </GradientCard>
               </TouchableOpacity>
             )}
           </View>
@@ -155,6 +165,9 @@ export default function HomeScreen() {
         {/* Trusted person */}
         {state.onboarding?.trustedPerson && (
           <Card style={styles.infoCard}>
+            <View style={styles.infoIconWrap}>
+              <Ionicons name="people-outline" size={20} color={Colors.accent} />
+            </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Vertrouwenspersoon</Text>
               <Text style={styles.infoValue}>
@@ -168,12 +181,12 @@ export default function HomeScreen() {
         )}
 
         {/* Shared account hint */}
-        <Card style={styles.sharedCard}>
+        <GradientCard colors={GRADIENT_PRESETS.teal} style={styles.sharedCardOuter}>
           <Text style={styles.sharedTitle}>Gedeeld account</Text>
           <Text style={styles.sharedText}>
-            Dit account is ook via het web beschikbaar. Deel de toegang met je partner, kinderen of vertrouwenspersoon zodat zij ook dingen kunnen regelen.
+            Deel de toegang met je partner, kinderen of vertrouwenspersoon zodat zij ook dingen kunnen regelen.
           </Text>
-        </Card>
+        </GradientCard>
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -194,7 +207,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   headerLeft: {
     flex: 1,
@@ -209,123 +222,141 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  greeting: {
-    fontSize: FontSizes.h1,
-    fontWeight: '700',
-    color: Colors.text,
+  greetingLabel: {
+    fontSize: FontSizes.body,
+    fontWeight: FontWeights.medium,
+    color: Colors.textSecondary,
+    letterSpacing: 0.3,
   },
   tagline: {
-    fontSize: FontSizes.large,
-    color: Colors.accent,
-    fontWeight: '600',
-    fontStyle: 'italic',
+    fontSize: FontSizes.h1,
+    color: Colors.text,
+    fontWeight: FontWeights.heavy,
     marginTop: Spacing.xs,
+    letterSpacing: -0.5,
   },
-  progressCard: {
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
+  progressCardOuter: {
+    marginBottom: Spacing.lg,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.md,
   },
-  progressTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '700',
+  progressLabel: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: Spacing.xs,
+  },
+  progressPercent: {
+    fontSize: FontSizes.h1,
+    fontWeight: FontWeights.heavy,
     color: Colors.text,
+    letterSpacing: -1,
   },
-  progressCount: {
+  progressCountBubble: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  progressCountText: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.textSecondary,
   },
   progressHint: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
+    marginTop: Spacing.sm,
   },
-  recommendationsSection: {
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
+  section: {
+    marginBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  sectionLabel: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.medium,
+    color: Colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
   },
   sectionTitle: {
     fontSize: FontSizes.h2,
-    fontWeight: '700',
+    fontWeight: FontWeights.bold,
     color: Colors.text,
-    marginBottom: Spacing.sm,
+    marginTop: -Spacing.sm,
+    letterSpacing: -0.3,
   },
-  bigTaskCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.pink,
-    gap: Spacing.sm,
+  taskCardOuter: {
+    // just for spacing
   },
   taskBadgeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
   importantBadge: {
-    backgroundColor: Colors.pinkLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+    backgroundColor: 'rgba(244, 114, 182, 0.2)',
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
   },
   importantBadgeText: {
     fontSize: FontSizes.caption,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.pink,
   },
   taskDuration: {
     fontSize: FontSizes.caption,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+    color: Colors.textTertiary,
+    fontWeight: FontWeights.medium,
   },
   bigTaskTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '700',
+    fontSize: FontSizes.h3,
+    fontWeight: FontWeights.bold,
     color: Colors.text,
+    marginBottom: Spacing.xs,
+    letterSpacing: -0.2,
   },
   taskDescription: {
-    fontSize: FontSizes.small,
+    fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   startFlow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
   startFlowText: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.primary,
-  },
-  startFlowArrow: {
-    fontSize: FontSizes.body,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  easyTaskCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primary,
-    gap: Spacing.sm,
   },
   easyBadge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+    backgroundColor: 'rgba(45, 212, 191, 0.2)',
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 3,
     borderRadius: BorderRadius.full,
   },
   easyBadgeText: {
     fontSize: FontSizes.caption,
-    fontWeight: '600',
-    color: Colors.primaryDark,
+    fontWeight: FontWeights.semibold,
+    color: Colors.primary,
   },
   easyTaskTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: '600',
+    fontSize: FontSizes.h3,
+    fontWeight: FontWeights.semibold,
     color: Colors.text,
+    marginBottom: Spacing.xs,
+    letterSpacing: -0.2,
   },
   infoCard: {
     marginBottom: Spacing.md,
@@ -333,33 +364,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
   },
+  infoIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.accentLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   infoContent: {
     flex: 1,
   },
   infoLabel: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
+    fontWeight: FontWeights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   infoValue: {
     fontSize: FontSizes.body,
-    fontWeight: '600',
+    fontWeight: FontWeights.semibold,
     color: Colors.text,
+    marginTop: 2,
   },
-  sharedCard: {
+  sharedCardOuter: {
     marginBottom: Spacing.lg,
-    backgroundColor: Colors.primaryLight,
-    gap: Spacing.sm,
-    borderColor: 'rgba(45, 212, 191, 0.2)',
   },
   sharedTitle: {
-    fontSize: FontSizes.body,
-    fontWeight: '700',
+    fontSize: FontSizes.large,
+    fontWeight: FontWeights.bold,
     color: Colors.primary,
+    marginBottom: Spacing.sm,
   },
   sharedText: {
-    fontSize: FontSizes.small,
+    fontSize: FontSizes.body,
     color: Colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   bottomPadding: {
     height: Spacing.xxl,
