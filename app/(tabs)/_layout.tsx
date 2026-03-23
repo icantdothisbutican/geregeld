@@ -28,31 +28,17 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused }) => <TabIcon icon="🏠" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="checklist"
         options={{
-          title: 'Checklist',
+          title: 'Te Doen',
           tabBarIcon: ({ focused }) => <TabIcon icon="✅" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="guide"
-        options={{
-          title: 'Gids',
-          tabBarIcon: ({ focused }) => <TabIcon icon="📋" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="contacts"
-        options={{
-          title: 'Contacten',
-          tabBarIcon: ({ focused }) => <TabIcon icon="👥" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="wishes"
-        options={{
-          title: 'Wensen',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🕯️" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -62,6 +48,10 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabIcon icon="👤" focused={focused} />,
         }}
       />
+      {/* Hidden screens - still accessible via navigation */}
+      <Tabs.Screen name="guide" options={{ href: null }} />
+      <Tabs.Screen name="contacts" options={{ href: null }} />
+      <Tabs.Screen name="wishes" options={{ href: null }} />
     </Tabs>
   );
 }

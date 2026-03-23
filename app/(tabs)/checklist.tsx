@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,7 @@ import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/th
 import { Card } from '../../src/components/Card';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { loadState, saveState, AppState } from '../../src/store/appStore';
-import {
-  getFilteredChecklist,
-  ChecklistItem,
-  CATEGORIES,
-} from '../../src/data/checklist';
+import { getFilteredChapters, Chapter } from '../../src/data/checklist';
 
 function UrgencyBadge({ urgency }: { urgency: string }) {
   const config = {
@@ -34,14 +30,14 @@ function UrgencyBadge({ urgency }: { urgency: string }) {
 
 export default function ChecklistScreen() {
   const [state, setState] = useState<AppState | null>(null);
-  const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       loadState().then((s) => {
         setState(s);
-        setItems(getFilteredChecklist(s.situation));
+        setChapters(getFilteredChapters(s.situation, s.onboarding));
       });
     }, [])
   );
@@ -49,7 +45,8 @@ export default function ChecklistScreen() {
   if (!state) return null;
 
   const checkedItems = state.checkedItems || [];
-  const progress = items.length > 0 ? checkedItems.length / items.length : 0;
+  const totalItems = chapters.reduce((sum, ch) => sum + ch.items.length, 0);
+  const progress = totalItems > 0 ? checkedItems.length / totalItems : 0;
 
   async function toggleItem(itemId: string) {
     const newChecked = checkedItems.includes(itemId)
@@ -59,75 +56,90 @@ export default function ChecklistScreen() {
     setState((prev) => prev ? { ...prev, checkedItems: newChecked } : prev);
   }
 
-  const groupedItems = CATEGORIES.map((cat) => ({
-    ...cat,
-    items: items.filter((item) => item.category === cat.key),
-  })).filter((group) => group.items.length > 0);
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Jouw Checklist</Text>
+          <Text style={styles.title}>Te Doen</Text>
           <Text style={styles.subtitle}>
-            {items.length - checkedItems.length} van {items.length} dingen om te regelen
+            {totalItems - checkedItems.length} van {totalItems} dingen om te regelen
           </Text>
           <ProgressBar progress={progress} />
           {progress === 1 && (
             <View style={styles.completeBanner}>
-              <Text style={styles.completeText}>🎉 Alles geregeld! Goed bezig.</Text>
+              <Text style={styles.completeText}>Alles geregeld! Goed bezig.</Text>
             </View>
           )}
         </View>
 
-        {groupedItems.map((group) => {
-          const isExpanded = expandedCategory === group.key;
-          const groupChecked = group.items.filter((i) => checkedItems.includes(i.id)).length;
+        {chapters.map((chapter) => {
+          const isExpanded = expandedChapter === chapter.key;
+          const chapterChecked = chapter.items.filter((i) => checkedItems.includes(i.id)).length;
+          const chapterDone = chapterChecked === chapter.items.length;
 
           return (
-            <Card key={group.key} style={styles.categoryCard}>
+            <Card key={chapter.key} style={styles.chapterCard}>
               <TouchableOpacity
-                style={styles.categoryHeader}
-                onPress={() => setExpandedCategory(isExpanded ? null : group.key)}
+                style={styles.chapterHeader}
+                onPress={() => setExpandedChapter(isExpanded ? null : chapter.key)}
                 activeOpacity={0.7}
               >
-                <View style={styles.categoryTitleRow}>
-                  <Text style={styles.categoryIcon}>{group.icon}</Text>
-                  <Text style={styles.categoryLabel}>{group.label}</Text>
+                <View style={styles.chapterTitleRow}>
+                  <Text style={styles.chapterIcon}>{chapter.icon}</Text>
+                  <View style={styles.chapterTitleContent}>
+                    <Text style={styles.chapterLabel}>{chapter.label}</Text>
+                    <Text style={styles.chapterDesc}>{chapter.description}</Text>
+                  </View>
                 </View>
-                <View style={styles.categoryMeta}>
-                  <Text style={styles.categoryCount}>
-                    {groupChecked}/{group.items.length}
+                <View style={styles.chapterMeta}>
+                  <Text style={[
+                    styles.chapterCount,
+                    chapterDone && styles.chapterCountDone,
+                  ]}>
+                    {chapterChecked}/{chapter.items.length}
                   </Text>
                   <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
                 </View>
               </TouchableOpacity>
 
-              {isExpanded &&
-                group.items.map((item) => {
-                  const isChecked = checkedItems.includes(item.id);
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[styles.checkItem, isChecked && styles.checkItemDone]}
-                      onPress={() => toggleItem(item.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.checkRow}>
-                        <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-                          {isChecked && <Text style={styles.checkmark}>✓</Text>}
+              {isExpanded && (
+                <View style={styles.chapterItems}>
+                  {chapter.items.map((item) => {
+                    const isChecked = checkedItems.includes(item.id);
+                    return (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[styles.checkItem, isChecked && styles.checkItemDone]}
+                        onPress={() => toggleItem(item.id)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.checkRow}>
+                          <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
+                            {isChecked && <Text style={styles.checkmark}>✓</Text>}
+                          </View>
+                          <View style={styles.checkContent}>
+                            <Text style={[styles.checkTitle, isChecked && styles.checkTitleDone]}>
+                              {item.title}
+                            </Text>
+                            <Text style={styles.checkDescription}>{item.description}</Text>
+                            <View style={styles.checkMeta}>
+                              <UrgencyBadge urgency={item.urgency} />
+                              {item.actionLabel && !isChecked && (
+                                <View style={styles.actionBadge}>
+                                  <Text style={styles.actionBadgeText}>{item.actionLabel}</Text>
+                                </View>
+                              )}
+                            </View>
+                            {item.actionHint && !isChecked && (
+                              <Text style={styles.actionHint}>{item.actionHint}</Text>
+                            )}
+                          </View>
                         </View>
-                        <View style={styles.checkContent}>
-                          <Text style={[styles.checkTitle, isChecked && styles.checkTitleDone]}>
-                            {item.title}
-                          </Text>
-                          <Text style={styles.checkDescription}>{item.description}</Text>
-                          <UrgencyBadge urgency={item.urgency} />
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
             </Card>
           );
         })}
@@ -172,44 +184,57 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  categoryCard: {
+  chapterCard: {
     marginBottom: Spacing.md,
     padding: 0,
     overflow: 'hidden',
   },
-  categoryHeader: {
+  chapterHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  categoryTitleRow: {
+  chapterTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
+    flex: 1,
   },
-  categoryIcon: {
+  chapterIcon: {
     fontSize: 24,
   },
-  categoryLabel: {
+  chapterTitleContent: {
+    flex: 1,
+    gap: 2,
+  },
+  chapterLabel: {
     fontSize: FontSizes.large,
     fontWeight: '700',
     color: Colors.slate,
   },
-  categoryMeta: {
+  chapterDesc: {
+    fontSize: FontSizes.small,
+    color: Colors.slateMuted,
+  },
+  chapterMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  categoryCount: {
+  chapterCount: {
     fontSize: FontSizes.small,
     color: Colors.slateMuted,
     fontWeight: '600',
+  },
+  chapterCountDone: {
+    color: Colors.greenDark,
   },
   expandIcon: {
     fontSize: 12,
     color: Colors.slateMuted,
   },
+  chapterItems: {},
   checkItem: {
     borderTopWidth: 1,
     borderTopColor: Colors.warmGray,
@@ -259,16 +284,38 @@ const styles = StyleSheet.create({
     color: Colors.slateMuted,
     lineHeight: 20,
   },
+  checkMeta: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
   badge: {
     alignSelf: 'flex-start',
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.full,
-    marginTop: Spacing.xs,
   },
   badgeText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  actionBadge: {
+    backgroundColor: Colors.terracotta,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  actionBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  actionHint: {
+    fontSize: FontSizes.small,
+    color: Colors.terracotta,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   bottomPadding: {
     height: Spacing.xxl,

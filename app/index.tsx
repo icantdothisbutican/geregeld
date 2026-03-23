@@ -12,7 +12,7 @@ export default function WelcomeScreen() {
   useEffect(() => {
     loadState().then((state) => {
       if (state.hasCompletedOnboarding) {
-        router.replace('/(tabs)/checklist');
+        router.replace('/(tabs)/home');
       }
       setLoading(false);
     });

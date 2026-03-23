@@ -12,7 +12,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
-import { loadState, saveState, AppState } from '../../src/store/appStore';
+import { loadState, AppState } from '../../src/store/appStore';
+import { getFilteredChapters } from '../../src/data/checklist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
@@ -28,19 +29,30 @@ export default function ProfileScreen() {
   if (!state) return null;
 
   const situation = state.situation;
+  const onboarding = state.onboarding;
+  const chapters = getFilteredChapters(situation, onboarding);
+  const totalItems = chapters.reduce((sum, ch) => sum + ch.items.length, 0);
+  const checkedCount = state.checkedItems?.length || 0;
+  const contactsCount = state.contacts?.length || 0;
 
-  function getSituationSummary() {
-    const parts: string[] = [];
-    if (situation.hasPartner) parts.push('Partner: Ja');
-    else if (situation.hasPartner === false) parts.push('Partner: Nee');
-    if (situation.hasChildren) parts.push('Kinderen: Ja');
-    else if (situation.hasChildren === false) parts.push('Kinderen: Nee');
+  function getSituationItems(): { label: string; value: string }[] {
+    const items: { label: string; value: string }[] = [];
+    if (onboarding?.name) items.push({ label: 'Naam', value: onboarding.name });
+    if (onboarding?.ageRange) items.push({ label: 'Leeftijd', value: onboarding.ageRange });
+    if (situation.hasPartner !== null) items.push({ label: 'Partner', value: situation.hasPartner ? 'Ja' : 'Nee' });
+    if (situation.hasChildren !== null) items.push({ label: 'Kinderen', value: situation.hasChildren ? 'Ja' : 'Nee' });
     if (situation.housingType) {
-      parts.push(
-        `Woning: ${situation.housingType === 'huur' ? 'Huur' : situation.housingType === 'koop' ? 'Koop' : 'Anders'}`
-      );
+      const housing = situation.housingType === 'huur' ? 'Huur' : situation.housingType === 'koop' ? 'Koop' : 'Anders';
+      items.push({ label: 'Woning', value: housing });
     }
-    return parts;
+    if (onboarding?.hasTestament) {
+      const testament = onboarding.hasTestament === 'ja' ? 'Ja' : onboarding.hasTestament === 'nee' ? 'Nee' : 'Weet niet';
+      items.push({ label: 'Testament', value: testament });
+    }
+    if (onboarding?.preferenceMode) {
+      items.push({ label: 'Voorkeur', value: onboarding.preferenceMode === 'digitaal' ? 'Digitaal' : 'Op papier' });
+    }
+    return items;
   }
 
   async function handleReset() {
@@ -61,24 +73,28 @@ export default function ProfileScreen() {
     );
   }
 
-  const checkedCount = state.checkedItems?.length || 0;
-  const contactsCount = state.contacts?.length || 0;
+  const situationItems = getSituationItems();
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Jouw Profiel</Text>
+          <Text style={styles.title}>Profiel</Text>
           <Text style={styles.subtitle}>Je voortgang en instellingen</Text>
         </View>
 
         {/* Progress overview */}
         <Card style={styles.statsCard}>
-          <Text style={styles.statsTitle}>📊 Voortgang</Text>
+          <Text style={styles.statsTitle}>Voortgang</Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{checkedCount}</Text>
-              <Text style={styles.statLabel}>Items afgevinkt</Text>
+              <Text style={styles.statLabel}>Afgevinkt</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{totalItems - checkedCount}</Text>
+              <Text style={styles.statLabel}>Te doen</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -90,35 +106,44 @@ export default function ProfileScreen() {
 
         {/* Situation */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>🏠 Jouw situatie</Text>
-          {getSituationSummary().map((item, i) => (
-            <Text key={i} style={styles.situationItem}>
-              {item}
-            </Text>
+          <Text style={styles.sectionTitle}>Jouw situatie</Text>
+          {situationItems.map((item, i) => (
+            <View key={i} style={styles.situationRow}>
+              <Text style={styles.situationLabel}>{item.label}</Text>
+              <Text style={styles.situationValue}>{item.value}</Text>
+            </View>
           ))}
+          {onboarding?.trustedPerson && (
+            <View style={styles.situationRow}>
+              <Text style={styles.situationLabel}>Vertrouwenspersoon</Text>
+              <Text style={styles.situationValue}>
+                {onboarding.trustedPerson.name}
+              </Text>
+            </View>
+          )}
           <TouchableOpacity
             style={styles.editLink}
             onPress={() => router.push('/onboarding/questions')}
           >
-            <Text style={styles.editLinkText}>Situatie aanpassen →</Text>
+            <Text style={styles.editLinkText}>Situatie aanpassen</Text>
           </TouchableOpacity>
         </Card>
 
         {/* Upgrade */}
         <Card style={{ ...styles.sectionCard, ...styles.upgradeCard }}>
-          <Text style={styles.upgradeTitle}>⭐ Geregeld+</Text>
+          <Text style={styles.upgradeTitle}>Geregeld+</Text>
           <Text style={styles.upgradeText}>
-            Ontgrendel de wachtwoordkluis, documentenkluis, onbeperkt contacten en meer.
+            Ontgrendel de wachtwoordkluis, documentenkluis, PostNL-integratie en meer.
           </Text>
           <View style={styles.upgradeFeatures}>
-            <Text style={styles.upgradeFeature}>🔐 Wachtwoordkluis</Text>
-            <Text style={styles.upgradeFeature}>📄 Documentenkluis</Text>
-            <Text style={styles.upgradeFeature}>👥 Onbeperkt contacten</Text>
-            <Text style={styles.upgradeFeature}>🤝 Vertrouwenspersoon</Text>
-            <Text style={styles.upgradeFeature}>🔔 Jaarlijkse check-in</Text>
+            <Text style={styles.upgradeFeature}>Wachtwoordkluis</Text>
+            <Text style={styles.upgradeFeature}>Documentenkluis</Text>
+            <Text style={styles.upgradeFeature}>Onbeperkt contacten</Text>
+            <Text style={styles.upgradeFeature}>PostNL brieven versturen</Text>
+            <Text style={styles.upgradeFeature}>Jaarlijkse check-in</Text>
           </View>
           <Button
-            title="Upgrade naar Geregeld+ — €5,99/maand"
+            title="Upgrade naar Geregeld+"
             onPress={() =>
               Alert.alert(
                 'Binnenkort beschikbaar',
@@ -128,28 +153,16 @@ export default function ProfileScreen() {
             variant="primary"
             size="medium"
           />
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert(
-                'Binnenkort beschikbaar',
-                'De Voor Altijd optie is nog in ontwikkeling.'
-              )
-            }
-          >
-            <Text style={styles.lifetimeLink}>Of kies Geregeld Voor Altijd — €149 eenmalig</Text>
-          </TouchableOpacity>
         </Card>
 
         {/* About */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>ℹ️ Over Geregeld</Text>
+          <Text style={styles.sectionTitle}>Over Geregeld</Text>
           <Text style={styles.aboutText}>
-            Geregeld maakt het zo eenvoudig om je zaken te regelen dat het letterlijk 10 minuten kost. Geen notaris nodig. Geen juridisch jargon.
+            Geregeld maakt het zo eenvoudig om je zaken te regelen dat het letterlijk 10 minuten kost.
           </Text>
-          <Text style={styles.aboutSubtext}>
-            Versie 1.0 · Gemaakt met ❤️ in Nederland
-          </Text>
-          <Text style={styles.aboutSubtext}>© Qi Holdings</Text>
+          <Text style={styles.aboutSubtext}>Versie 1.0 · Gemaakt in Nederland</Text>
+          <Text style={styles.aboutSubtext}>Qi Holdings</Text>
         </Card>
 
         {/* Danger zone */}
@@ -231,9 +244,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.slate,
   },
-  situationItem: {
+  situationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.xs,
+  },
+  situationLabel: {
     fontSize: FontSizes.body,
     color: Colors.slateMuted,
+  },
+  situationValue: {
+    fontSize: FontSizes.body,
+    fontWeight: '600',
+    color: Colors.slate,
   },
   editLink: {
     marginTop: Spacing.sm,
@@ -264,13 +287,6 @@ const styles = StyleSheet.create({
   upgradeFeature: {
     fontSize: FontSizes.body,
     color: Colors.slate,
-  },
-  lifetimeLink: {
-    fontSize: FontSizes.small,
-    color: Colors.terracotta,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-    fontWeight: '500',
   },
   aboutText: {
     fontSize: FontSizes.body,
