@@ -89,8 +89,20 @@ export default function MessagesScreen() {
       createdAt: new Date().toISOString(),
     };
     const newMessages = [...messages, msg];
-    await saveState({ messages: newMessages });
-    setState((prev) => prev ? { ...prev, messages: newMessages } : prev);
+
+    // Also save to vault
+    const vaultItems = state?.vaultItems || [];
+    const vaultEntry = {
+      id: generateId(),
+      title: `${msg.recipient ? `Aan ${msg.recipient}: ` : ''}${msg.title}`,
+      category: 'note' as const,
+      content: msg.content,
+      createdAt: msg.createdAt,
+    };
+    const newVaultItems = [...vaultItems, vaultEntry];
+
+    await saveState({ messages: newMessages, vaultItems: newVaultItems });
+    setState((prev) => prev ? { ...prev, messages: newMessages, vaultItems: newVaultItems } : prev);
     setComposing(null);
     setTitle('');
     setContent('');
@@ -104,9 +116,14 @@ export default function MessagesScreen() {
         text: 'Verwijderen',
         style: 'destructive',
         onPress: async () => {
+          const deletedMsg = messages.find((m) => m.id === id);
           const newMessages = messages.filter((m) => m.id !== id);
-          await saveState({ messages: newMessages });
-          setState((prev) => prev ? { ...prev, messages: newMessages } : prev);
+          // Also remove matching vault item
+          const vaultItems = (state?.vaultItems || []).filter(
+            (v) => !(v.category === 'note' && deletedMsg && v.content === deletedMsg.content)
+          );
+          await saveState({ messages: newMessages, vaultItems });
+          setState((prev) => prev ? { ...prev, messages: newMessages, vaultItems } : prev);
           setExpandedMessage(null);
         },
       },
