@@ -1,3 +1,11 @@
+export interface FormField {
+  key: string;
+  label: string;
+  placeholder: string;
+  type: 'text' | 'multiline' | 'password' | 'phone' | 'email' | 'number';
+  sensitive?: boolean; // saved to vault
+}
+
 export interface FlowStep {
   title: string;
   description: string;
@@ -6,6 +14,9 @@ export interface FlowStep {
   actionUrl?: string;
   actionPhone?: string;
   details?: string[];
+  formFields?: FormField[];
+  vaultCategory?: 'document' | 'password' | 'note';
+  vaultTitle?: string; // title for vault entry
 }
 
 export interface Flow {
@@ -25,7 +36,7 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Waarom een testament?',
-        description: 'Zonder testament bepaalt de wet wie je erfgenamen zijn. Met een testament bepaal je zelf wie wat krijgt, en voorkom je conflicten.',
+        description: 'Zonder testament bepaalt de wet wie je erfgenamen zijn. Met een testament bepaal je zelf wie wat krijgt.',
         actionType: 'info',
         details: [
           'Je bepaalt zelf wie wat erft',
@@ -42,15 +53,16 @@ export const FLOWS: Record<string, Flow> = {
         actionUrl: 'https://www.notaris.nl/notaris-zoeken',
       },
       {
-        title: 'Maak een afspraak',
-        description: 'Bel de notaris of maak online een afspraak. Neem het volgende mee:',
-        actionType: 'info',
-        details: [
-          'Geldig identiteitsbewijs',
-          'Overzicht van je bezittingen en schulden',
-          'Gegevens van je erfgenamen',
-          'Eventuele wensen over voogdij (bij kinderen)',
+        title: 'Noteer je notaris',
+        description: 'Vul de gegevens van je notaris in zodat je nabestaanden weten bij wie ze moeten zijn.',
+        actionType: 'form',
+        formFields: [
+          { key: 'notaris_naam', label: 'Naam notaris', placeholder: 'Bijv. Notariskantoor De Vries', type: 'text', sensitive: true },
+          { key: 'notaris_telefoon', label: 'Telefoonnummer', placeholder: '020 123 4567', type: 'phone', sensitive: true },
+          { key: 'notaris_adres', label: 'Adres', placeholder: 'Straat, stad', type: 'text', sensitive: true },
         ],
+        vaultCategory: 'document',
+        vaultTitle: 'Notaris gegevens',
       },
       {
         title: 'Afspraak gemaakt?',
@@ -94,26 +106,30 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Wat is een levenstestament?',
-        description: 'In een levenstestament leg je vast wie beslissingen voor je mag nemen als je dat zelf niet meer kunt. Dit geldt tijdens je leven, niet na overlijden.',
+        description: 'In een levenstestament leg je vast wie beslissingen voor je mag nemen als je dat zelf niet meer kunt.',
         actionType: 'info',
         details: [
           'Medische beslissingen (behandeling stoppen, reanimatie)',
           'Financiele beslissingen (bankzaken, belastingen)',
           'Persoonlijke beslissingen (woonplek, verzorging)',
           'Kostprijs: tussen de 400 en 800 euro bij een notaris',
-          'Gratis registratie mogelijk via het CLTR',
         ],
       },
       {
-        title: 'Meer informatie opzoeken',
-        description: 'Het Centraal Levenstestamentenregister heeft alle informatie die je nodig hebt.',
-        actionType: 'link',
-        actionLabel: 'Bekijk op notaris.nl',
-        actionUrl: 'https://www.notaris.nl/levenstestament',
+        title: 'Wie wordt je gevolmachtigde?',
+        description: 'Vul in wie jouw beslissingen mag nemen.',
+        actionType: 'form',
+        formFields: [
+          { key: 'gevolmachtigde_naam', label: 'Naam gevolmachtigde', placeholder: 'Volledige naam', type: 'text', sensitive: true },
+          { key: 'gevolmachtigde_relatie', label: 'Relatie', placeholder: 'Bijv. partner, kind', type: 'text', sensitive: true },
+          { key: 'gevolmachtigde_telefoon', label: 'Telefoonnummer', placeholder: '06 1234 5678', type: 'phone', sensitive: true },
+        ],
+        vaultCategory: 'document',
+        vaultTitle: 'Gevolmachtigde levenstestament',
       },
       {
         title: 'Geregeld?',
-        description: 'Markeer als afgerond wanneer je een levenstestament hebt opgesteld of een afspraak hebt gemaakt.',
+        description: 'Markeer als afgerond wanneer je een levenstestament hebt opgesteld.',
         actionType: 'confirm',
         actionLabel: 'Afgerond',
       },
@@ -159,29 +175,42 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Welke banken gebruik je?',
-        description: 'Maak een overzicht van al je bankrekeningen. Denk aan betaalrekeningen, spaarrekeningen, en beleggingsrekeningen.',
+        description: 'Maak een overzicht van al je bankrekeningen. We slaan dit veilig op in je kluis.',
         actionType: 'info',
         details: [
-          'ING, Rabobank, ABN AMRO, SNS, Triodos, ASN, Bunq, Revolut',
+          'Denk aan: ING, Rabobank, ABN AMRO, SNS, Triodos, ASN, Bunq, Revolut',
           'Noteer het rekeningnummer (IBAN)',
           'Is het een en/of-rekening of een persoonlijke rekening?',
           'Heb je een beleggingsrekening?',
         ],
       },
       {
-        title: 'Hoe krijgen nabestaanden toegang?',
-        description: 'Na overlijden moeten nabestaanden een akte van overlijden en verklaring van erfrecht overleggen aan de bank.',
-        actionType: 'info',
-        details: [
-          'Een en/of-rekening blijft toegankelijk voor de mederekeninghouder',
-          'Persoonlijke rekeningen worden geblokkeerd',
-          'De bank vraagt om een verklaring van erfrecht (via de notaris)',
-          'Tip: bewaar je bankpasjes op een bekende plek',
+        title: 'Betaalrekening(en)',
+        description: 'Vul je betaalrekening(en) in. Deze gegevens worden beveiligd opgeslagen in je kluis.',
+        actionType: 'form',
+        formFields: [
+          { key: 'bank1_naam', label: 'Bank', placeholder: 'Bijv. ING', type: 'text', sensitive: true },
+          { key: 'bank1_iban', label: 'IBAN', placeholder: 'NL00 INGB 0000 0000 00', type: 'text', sensitive: true },
+          { key: 'bank1_type', label: 'Soort rekening', placeholder: 'Bijv. betaalrekening, en/of', type: 'text', sensitive: true },
         ],
+        vaultCategory: 'document',
+        vaultTitle: 'Betaalrekening',
+      },
+      {
+        title: 'Spaarrekening(en)',
+        description: 'Heb je spaar- of beleggingsrekeningen? Vul die hier in.',
+        actionType: 'form',
+        formFields: [
+          { key: 'spaar1_bank', label: 'Bank', placeholder: 'Bijv. Rabobank', type: 'text', sensitive: true },
+          { key: 'spaar1_iban', label: 'IBAN', placeholder: 'NL00 RABO 0000 0000 00', type: 'text', sensitive: true },
+          { key: 'spaar1_type', label: 'Soort', placeholder: 'Bijv. spaarrekening, beleggingen', type: 'text', sensitive: true },
+        ],
+        vaultCategory: 'document',
+        vaultTitle: 'Spaar-/beleggingsrekening',
       },
       {
         title: 'Overzicht compleet?',
-        description: 'Heb je alle bankrekeningen genoteerd en weet je vertrouwenspersoon waar deze informatie staat?',
+        description: 'Je bankgegevens zijn veilig opgeslagen in je kluis.',
         actionType: 'confirm',
         actionLabel: 'Ja, overzicht is compleet',
       },
@@ -195,28 +224,28 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Welke verzekeringen heb je?',
-        description: 'Maak een overzicht van al je verzekeringen en de polisgegevens.',
-        actionType: 'info',
-        details: [
-          'Uitvaartverzekering (wie is de verzekeraar?)',
-          'Levensverzekering (wat is het verzekerd bedrag?)',
-          'Zorgverzekering',
-          'Autoverzekering',
-          'Woonhuisverzekering / inboedelverzekering',
-          'Aansprakelijkheidsverzekering',
-          'Rechtsbijstandverzekering',
+        description: 'Vul je verzekeringen in. We slaan de gegevens veilig op.',
+        actionType: 'form',
+        formFields: [
+          { key: 'verz_uitvaart', label: 'Uitvaartverzekering', placeholder: 'Verzekeraar + polisnummer', type: 'text', sensitive: true },
+          { key: 'verz_leven', label: 'Levensverzekering', placeholder: 'Verzekeraar + polisnummer', type: 'text', sensitive: true },
+          { key: 'verz_zorg', label: 'Zorgverzekering', placeholder: 'Verzekeraar + polisnummer', type: 'text', sensitive: true },
+          { key: 'verz_auto', label: 'Autoverzekering', placeholder: 'Verzekeraar + kenteken', type: 'text', sensitive: true },
+          { key: 'verz_woning', label: 'Woning/inboedel', placeholder: 'Verzekeraar + polisnummer', type: 'text', sensitive: true },
         ],
+        vaultCategory: 'document',
+        vaultTitle: 'Verzekeringen overzicht',
       },
       {
         title: 'Controleer je uitvaartverzekering',
-        description: 'Als je een uitvaartverzekering hebt, is het slim om te controleren of de dekking nog voldoende is.',
+        description: 'Controleer of de dekking nog voldoende is.',
         actionType: 'link',
         actionLabel: 'Vergelijk op Independer',
         actionUrl: 'https://www.independer.nl/uitvaartverzekering',
       },
       {
         title: 'Overzicht klaar?',
-        description: 'Bewaar je polisgegevens op een plek die je vertrouwenspersoon kent.',
+        description: 'Je verzekeringsgegevens staan veilig in je kluis.',
         actionType: 'confirm',
         actionLabel: 'Afgerond',
       },
@@ -230,7 +259,7 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'iPhone: Deel via Familiedeling',
-        description: 'Apple heeft een ingebouwde functie om wachtwoorden te delen met een vertrouwd persoon.',
+        description: 'Apple heeft een ingebouwde functie om wachtwoorden te delen.',
         actionType: 'info',
         details: [
           'Ga naar Instellingen > Wachtwoorden',
@@ -241,7 +270,7 @@ export const FLOWS: Record<string, Flow> = {
       },
       {
         title: 'Android: Deel via Google Wachtwoordmanager',
-        description: 'Google biedt ook een functie om wachtwoorden te delen met vertrouwde personen.',
+        description: 'Google biedt ook een functie om wachtwoorden te delen.',
         actionType: 'info',
         details: [
           'Ga naar passwords.google.com',
@@ -260,37 +289,49 @@ export const FLOWS: Record<string, Flow> = {
   },
   'dig-1b': {
     id: 'dig-1b',
-    title: 'Wachtwoorden op papier',
-    subtitle: 'Print een veilig overzicht',
+    title: 'Wachtwoorden opslaan',
+    subtitle: 'Sla je belangrijkste wachtwoorden veilig op',
     duration: '15 min',
     steps: [
       {
-        title: 'Welke wachtwoorden zijn belangrijk?',
-        description: 'Schrijf de wachtwoorden op die je nabestaanden nodig hebben.',
-        actionType: 'info',
-        details: [
-          'E-mail (dit is de sleutel tot alle andere accounts)',
-          'Telefoon pincode / ontgrendelcode',
-          'Bankieren app',
-          'DigiD',
-          'Social media (als je wilt dat ze accounts beheren)',
-          'iCloud / Google account',
+        title: 'Je belangrijkste accounts',
+        description: 'Vul je wachtwoorden in. Alles wordt versleuteld opgeslagen in je beveiligde kluis.',
+        actionType: 'form',
+        formFields: [
+          { key: 'pw_email', label: 'E-mail wachtwoord', placeholder: 'Bijv. Gmail, Outlook', type: 'password', sensitive: true },
+          { key: 'pw_email_adres', label: 'E-mailadres', placeholder: 'naam@voorbeeld.nl', type: 'email', sensitive: true },
+          { key: 'pw_telefoon', label: 'Telefoon pincode', placeholder: 'Bijv. 123456', type: 'password', sensitive: true },
+          { key: 'pw_digid', label: 'DigiD gebruikersnaam', placeholder: 'Je DigiD login', type: 'text', sensitive: true },
         ],
+        vaultCategory: 'password',
+        vaultTitle: 'Belangrijkste accounts',
       },
       {
-        title: 'Bewaar het veilig',
-        description: 'Berg het papier op in een afgesloten plek die je vertrouwenspersoon kent. Denk aan een kluis of verzegelde envelop bij de notaris.',
-        actionType: 'info',
-        details: [
-          'Gebruik een afgesloten la of kluis',
-          'Of bewaar het in een verzegelde envelop bij je notaris',
-          'Vertel alleen je vertrouwenspersoon waar het ligt',
-          'Update het jaarlijks als je wachtwoorden wijzigt',
+        title: 'Bank & financieel',
+        description: 'Wachtwoorden voor bankieren en financiele apps.',
+        actionType: 'form',
+        formFields: [
+          { key: 'pw_bank', label: 'Bank app/website', placeholder: 'Inloggegevens', type: 'password', sensitive: true },
+          { key: 'pw_icloud', label: 'iCloud / Google Account', placeholder: 'Wachtwoord', type: 'password', sensitive: true },
         ],
+        vaultCategory: 'password',
+        vaultTitle: 'Bank & cloud wachtwoorden',
       },
       {
-        title: 'Alles opgeschreven?',
-        description: 'Je vertrouwenspersoon weet waar de wachtwoorden liggen.',
+        title: 'Social media (optioneel)',
+        description: 'Wil je dat je nabestaanden toegang hebben tot je social media?',
+        actionType: 'form',
+        formFields: [
+          { key: 'pw_facebook', label: 'Facebook', placeholder: 'Wachtwoord (optioneel)', type: 'password', sensitive: true },
+          { key: 'pw_instagram', label: 'Instagram', placeholder: 'Wachtwoord (optioneel)', type: 'password', sensitive: true },
+          { key: 'social_wens', label: 'Wat wil je met je accounts?', placeholder: 'Bijv. verwijderen, herdenkingspagina', type: 'text', sensitive: true },
+        ],
+        vaultCategory: 'password',
+        vaultTitle: 'Social media accounts',
+      },
+      {
+        title: 'Alles opgeslagen',
+        description: 'Je wachtwoorden staan veilig in je kluis. Alleen jij en je vertrouwenspersoon hebben toegang.',
         actionType: 'confirm',
         actionLabel: 'Afgerond',
       },
@@ -314,12 +355,25 @@ export const FLOWS: Record<string, Flow> = {
           'Collega\'s en werkgever',
           'Huisarts en specialisten',
           'Verenigingen en clubs',
-          'School of kinderopvang (bij kinderen)',
         ],
       },
       {
-        title: 'Voeg contacten toe',
-        description: 'Voeg de belangrijkste contacten toe in de app. Later kun je via PostNL met een druk op de knop rouwkaarten versturen.',
+        title: 'Belangrijkste contacten',
+        description: 'Vul de belangrijkste contactpersonen in. Later kun je er meer toevoegen.',
+        actionType: 'form',
+        formFields: [
+          { key: 'contact1_naam', label: 'Naam contact 1', placeholder: 'Volledige naam', type: 'text', sensitive: true },
+          { key: 'contact1_tel', label: 'Telefoonnummer', placeholder: '06 1234 5678', type: 'phone', sensitive: true },
+          { key: 'contact1_relatie', label: 'Relatie', placeholder: 'Bijv. broer, vriendin', type: 'text', sensitive: true },
+          { key: 'contact2_naam', label: 'Naam contact 2', placeholder: 'Volledige naam', type: 'text', sensitive: true },
+          { key: 'contact2_tel', label: 'Telefoonnummer', placeholder: '06 1234 5678', type: 'phone', sensitive: true },
+        ],
+        vaultCategory: 'note',
+        vaultTitle: 'Contactpersonenlijst',
+      },
+      {
+        title: 'Contacten toegevoegd?',
+        description: 'Je kunt altijd meer contacten toevoegen via het profiel.',
         actionType: 'confirm',
         actionLabel: 'Contacten toegevoegd',
       },
@@ -333,7 +387,7 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Kies een stijl',
-        description: 'Kies een stijl die bij je past. Je kunt later altijd aanpassen.',
+        description: 'Kies een stijl die bij je past.',
         actionType: 'info',
         details: [
           'Klassiek: wit met zwarte rand',
@@ -344,7 +398,7 @@ export const FLOWS: Record<string, Flow> = {
       },
       {
         title: 'PostNL integratie',
-        description: 'Zodra je contacten hebt toegevoegd, kunnen je nabestaanden met een druk op de knop rouwkaarten versturen via PostNL.',
+        description: 'Je nabestaanden kunnen met een druk op de knop rouwkaarten versturen via PostNL.',
         actionType: 'info',
         details: [
           'Alle adressen worden automatisch ingevuld',
@@ -355,14 +409,14 @@ export const FLOWS: Record<string, Flow> = {
       },
       {
         title: 'Stijl gekozen?',
-        description: 'Je rouwkaarten staan klaar. Je nabestaanden hoeven alleen nog op "verstuur" te drukken.',
+        description: 'Je rouwkaarten staan klaar.',
         actionType: 'confirm',
         actionLabel: 'Afgerond',
       },
     ],
   },
 
-  // Guide flows - "wat te doen bij overlijden" actionable versions
+  // Guide flows
   'guide-1': {
     id: 'guide-1',
     title: 'Overlijden laten vaststellen',
@@ -378,18 +432,17 @@ export const FLOWS: Record<string, Flow> = {
       },
       {
         title: 'De arts komt langs',
-        description: 'De arts stelt het overlijden officieel vast en maakt een verklaring van overlijden op. Bewaar dit document goed — je hebt het nodig voor alle vervolgstappen.',
+        description: 'De arts stelt het overlijden officieel vast en maakt een verklaring van overlijden op.',
         actionType: 'info',
         details: [
           'De arts controleert of het een natuurlijk overlijden is',
-          'Bij een niet-natuurlijk overlijden wordt de politie ingeschakeld',
           'Je ontvangt een A-verklaring (verklaring van overlijden)',
           'En een B-verklaring (doodsoorzaakverklaring, gaat naar CBS)',
         ],
       },
       {
         title: 'Verklaring ontvangen?',
-        description: 'Berg de verklaring van overlijden veilig op. Je hebt dit document nodig bij de gemeente, bank, en verzekeraar.',
+        description: 'Berg de verklaring van overlijden veilig op.',
         actionType: 'confirm',
         actionLabel: 'Ja, ontvangen',
       },
@@ -403,12 +456,12 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Check de uitvaartverzekering',
-        description: 'Controleer eerst of de overledene een uitvaartverzekering had. Vaak is hierin al een uitvaartondernemer opgenomen.',
+        description: 'Controleer eerst of de overledene een uitvaartverzekering had.',
         actionType: 'info',
         details: [
           'Check de administratie van de overledene',
           'Bel de verzekeraar als je het polisnummer hebt',
-          'Sommige werkgevers bieden een uitvaartverzekering als secundaire arbeidsvoorwaarde',
+          'Sommige werkgevers bieden een uitvaartverzekering',
         ],
       },
       {
@@ -419,8 +472,20 @@ export const FLOWS: Record<string, Flow> = {
         actionUrl: 'https://www.uitvaart.nl/uitvaartondernemers',
       },
       {
+        title: 'Noteer de gegevens',
+        description: 'Sla de gegevens van de uitvaartondernemer op.',
+        actionType: 'form',
+        formFields: [
+          { key: 'uitvaart_naam', label: 'Naam uitvaartondernemer', placeholder: 'Bijv. Dela, Monuta', type: 'text', sensitive: true },
+          { key: 'uitvaart_tel', label: 'Telefoonnummer', placeholder: '0800 1234', type: 'phone', sensitive: true },
+          { key: 'uitvaart_ref', label: 'Referentienummer', placeholder: 'Indien van toepassing', type: 'text', sensitive: true },
+        ],
+        vaultCategory: 'document',
+        vaultTitle: 'Uitvaartondernemer',
+      },
+      {
         title: 'Uitvaartondernemer gebeld?',
-        description: 'De uitvaartondernemer neemt veel praktische zaken uit handen: vervoer, kist, bloemen, locatie.',
+        description: 'De uitvaartondernemer neemt veel praktische zaken uit handen.',
         actionType: 'confirm',
         actionLabel: 'Ja, geregeld',
       },
@@ -434,7 +499,7 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Wat heb je nodig?',
-        description: 'Verzamel de volgende documenten voordat je naar de gemeente gaat.',
+        description: 'Verzamel de volgende documenten.',
         actionType: 'info',
         details: [
           'Verklaring van overlijden (van de arts)',
@@ -445,19 +510,14 @@ export const FLOWS: Record<string, Flow> = {
       },
       {
         title: 'Ga naar de gemeente',
-        description: 'Je moet het overlijden melden bij de gemeente waar de persoon is overleden (niet waar diegene woonde). De meeste gemeentes bieden dit ook online aan.',
+        description: 'Meld het overlijden bij de gemeente waar de persoon is overleden. Vraag minimaal 5 afschriften aan.',
         actionType: 'link',
         actionLabel: 'Zoek je gemeente',
         actionUrl: 'https://www.rijksoverheid.nl/onderwerpen/overlijden/aangifte-van-overlijden',
       },
       {
-        title: 'Vraag meerdere afschriften',
-        description: 'Vraag minimaal 5 afschriften van de akte van overlijden aan. Je hebt ze nodig voor de bank, verzekeringen, werkgever, en notaris.',
-        actionType: 'info',
-      },
-      {
         title: 'Akte ontvangen?',
-        description: 'De gemeente schrijft de overledene uit uit de Basisregistratie Personen (BRP).',
+        description: 'De gemeente schrijft de overledene uit uit de BRP.',
         actionType: 'confirm',
         actionLabel: 'Ja, akte ontvangen',
       },
@@ -470,30 +530,25 @@ export const FLOWS: Record<string, Flow> = {
     duration: '15 min',
     steps: [
       {
-        title: 'Neem contact op',
-        description: 'Informeer de werkgever van de overledene zo snel mogelijk. Bel bij voorkeur de direct leidinggevende of HR.',
-        actionType: 'info',
+        title: 'Werkgever van de overledene',
+        description: 'Vul de gegevens van de werkgever in zodat nabestaanden weten wie ze moeten bellen.',
+        actionType: 'form',
+        formFields: [
+          { key: 'werkgever_naam', label: 'Werkgever', placeholder: 'Bedrijfsnaam', type: 'text', sensitive: true },
+          { key: 'werkgever_contact', label: 'Contactpersoon / HR', placeholder: 'Naam', type: 'text', sensitive: true },
+          { key: 'werkgever_tel', label: 'Telefoonnummer', placeholder: '020 123 4567', type: 'phone', sensitive: true },
+        ],
+        vaultCategory: 'document',
+        vaultTitle: 'Werkgever gegevens',
         details: [
           'Vraag naar het laatste salaris en vakantiegeld',
           'Vraag naar eventueel nabestaandenpensioen',
-          'Vraag naar een eventuele uitkering bij overlijden',
           'Bespreek het inleveren van bedrijfseigendommen',
         ],
       },
       {
-        title: 'Vergeet je eigen werkgever niet',
-        description: 'Als je zelf werkt, heb je recht op bijzonder verlof. De duur hangt af van je relatie met de overledene en je CAO.',
-        actionType: 'info',
-        details: [
-          'Partner of kind: meestal 4 dagen',
-          'Ouder, broer/zus: meestal 2 dagen',
-          'Schoonfamilie: meestal 1-2 dagen',
-          'Check je CAO of personeelshandboek',
-        ],
-      },
-      {
         title: 'Werkgever geinformeerd?',
-        description: 'Beide werkgevers (van de overledene en van jezelf) zijn op de hoogte.',
+        description: 'De werkgever is op de hoogte.',
         actionType: 'confirm',
         actionLabel: 'Ja, geinformeerd',
       },
@@ -506,8 +561,8 @@ export const FLOWS: Record<string, Flow> = {
     duration: '30 min',
     steps: [
       {
-        title: 'Welke bank?',
-        description: 'Meld het overlijden bij elke bank waar de overledene een rekening had.',
+        title: 'Telefoonnummers banken',
+        description: 'Bel de bank(en) om het overlijden te melden.',
         actionType: 'info',
         details: [
           'ING: 020 22 888 00',
@@ -526,12 +581,12 @@ export const FLOWS: Record<string, Flow> = {
           'Akte van overlijden',
           'Verklaring van erfrecht (via de notaris)',
           'Jouw identiteitsbewijs',
-          'Let op: een en/of-rekening blijft toegankelijk voor de mederekeninghouder',
+          'Een en/of-rekening blijft toegankelijk voor de mederekeninghouder',
         ],
       },
       {
         title: 'Alle banken geinformeerd?',
-        description: 'De banken blokkeren de rekeningen en starten de procedure voor vrijgave van tegoeden.',
+        description: 'De banken blokkeren de rekeningen en starten de procedure.',
         actionType: 'confirm',
         actionLabel: 'Ja, alle banken gebeld',
       },
@@ -552,19 +607,18 @@ export const FLOWS: Record<string, Flow> = {
           'Levensverzekering: vraag naar de uitkering',
           'Zorgverzekering: zeg op per overlijdensdatum',
           'Auto-, woning-, inboedelverzekering: pas aan of zeg op',
-          'Aansprakelijkheidsverzekering: pas aan',
         ],
       },
       {
         title: 'Zorgverzekeraar opzeggen',
-        description: 'De zorgverzekering stopt automatisch op de dag van overlijden. Meld het wel, zodat eventuele premie wordt terugbetaald.',
+        description: 'De zorgverzekering stopt automatisch op de dag van overlijden.',
         actionType: 'link',
         actionLabel: 'Vind je zorgverzekeraar',
         actionUrl: 'https://www.zorgverzekeringslijn.nl',
       },
       {
         title: 'Alle verzekeraars geinformeerd?',
-        description: 'Bewaar de bevestigingen die je ontvangt van de verzekeraars.',
+        description: 'Bewaar de bevestigingen.',
         actionType: 'confirm',
         actionLabel: 'Ja, alles gemeld',
       },
@@ -578,25 +632,13 @@ export const FLOWS: Record<string, Flow> = {
     steps: [
       {
         title: 'Maak een verzendlijst',
-        description: 'Wie moet er geinformeerd worden? Gebruik je contactenlijst in Geregeld als basis.',
+        description: 'Wie moet er geinformeerd worden?',
         actionType: 'info',
         details: [
           'Familie en schoonfamilie',
           'Vrienden en buren',
           'Collega\'s en zakelijke contacten',
           'Verenigingen en clubs',
-          'School of kinderopvang',
-        ],
-      },
-      {
-        title: 'Verstuur via PostNL',
-        description: 'Als er contacten in Geregeld staan met adresgegevens, kun je rouwkaarten direct via PostNL laten versturen.',
-        actionType: 'info',
-        details: [
-          'Kies een ontwerp uit de templates',
-          'Adressen worden automatisch ingevuld',
-          'PostNL print en verstuurt de kaarten',
-          'Levertijd: volgende werkdag',
         ],
       },
       {

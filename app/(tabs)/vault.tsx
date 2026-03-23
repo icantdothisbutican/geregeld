@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
@@ -28,26 +30,45 @@ export default function VaultScreen() {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newCategory, setNewCategory] = useState<'document' | 'password' | 'note'>('document');
+  const [hasBiometrics, setHasBiometrics] = useState(false);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      loadState().then((s) => {
+      loadState().then(async (s) => {
         setState(s);
         if (!s.vaultPin) {
           setIsSettingPin(true);
         }
         setIsUnlocked(false);
         setPinInput('');
+        setExpandedItem(null);
+
+        // Check biometric availability
+        const compatible = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        setHasBiometrics(compatible && enrolled);
       });
     }, [])
   );
 
   if (!state) return null;
 
+  async function handleBiometricAuth() {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Ontgrendel je kluis',
+      cancelLabel: 'Gebruik wachtwoord',
+      disableDeviceFallback: true,
+    });
+    if (result.success) {
+      setIsUnlocked(true);
+    }
+  }
+
   async function handleSetPin() {
     if (pinStep === 'enter') {
       if (pinInput.length < 6) {
-        Alert.alert('Te kort', 'Je wachtwoord moet minimaal 6 tekens zijn.');
+        Alert.alert('Te kort', 'Je wachtwoord moet minimaal 6 tekens zijn voor maximale beveiliging.');
         return;
       }
       setConfirmPin(pinInput);
@@ -145,8 +166,8 @@ export default function VaultScreen() {
   if (isSettingPin) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.lockScreen}>
-          <GradientCard colors={GRADIENT_PRESETS.purpleTeal} style={styles.lockCardOuter}>
+        <ScrollView contentContainerStyle={styles.lockScreen} keyboardShouldPersistTaps="handled">
+          <GradientCard colors={GRADIENT_PRESETS.purpleTeal}>
             <View style={styles.lockIconContainer}>
               <Ionicons name="shield-checkmark" size={48} color={Colors.accent} />
             </View>
@@ -166,8 +187,15 @@ export default function VaultScreen() {
               autoFocus
             />
             <Button title={pinStep === 'enter' ? 'Volgende' : 'Kluis beveiligen'} onPress={handleSetPin} />
+
+            <View style={styles.offlineWarning}>
+              <Ionicons name="information-circle-outline" size={18} color={Colors.warning} />
+              <Text style={styles.offlineWarningText}>
+                Schrijf dit wachtwoord op en bewaar het op een veilige plek (bijv. in een kluis thuis). Dit wachtwoord kan niet worden hersteld.
+              </Text>
+            </View>
           </GradientCard>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -176,15 +204,31 @@ export default function VaultScreen() {
   if (!isUnlocked) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.lockScreen}>
-          <GradientCard colors={GRADIENT_PRESETS.purple} style={styles.lockCardOuter}>
+        <ScrollView contentContainerStyle={styles.lockScreen} keyboardShouldPersistTaps="handled">
+          <GradientCard colors={GRADIENT_PRESETS.purple}>
             <View style={styles.lockIconContainer}>
               <Ionicons name="lock-closed" size={48} color={Colors.accent} />
             </View>
             <Text style={styles.lockTitle}>Kluis</Text>
             <Text style={styles.lockSubtitle}>
-              Voer je wachtwoord in om toegang te krijgen.
+              Ontgrendel met {hasBiometrics ? 'Face ID / vingerafdruk of ' : ''}je wachtwoord.
             </Text>
+
+            {hasBiometrics && (
+              <TouchableOpacity style={styles.biometricButton} onPress={handleBiometricAuth} activeOpacity={0.7}>
+                <Ionicons name="finger-print-outline" size={32} color={Colors.accent} />
+                <Text style={styles.biometricText}>Ontgrendel met Face ID</Text>
+              </TouchableOpacity>
+            )}
+
+            {hasBiometrics && (
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>of</Text>
+                <View style={styles.dividerLine} />
+              </View>
+            )}
+
             <TextInput
               style={styles.pinInput}
               placeholder="Wachtwoord"
@@ -192,12 +236,12 @@ export default function VaultScreen() {
               value={pinInput}
               onChangeText={setPinInput}
               secureTextEntry
-              autoFocus
+              autoFocus={!hasBiometrics}
               onSubmitEditing={handleUnlock}
             />
             <Button title="Ontgrendelen" onPress={handleUnlock} />
           </GradientCard>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -269,12 +313,12 @@ export default function VaultScreen() {
         )}
 
         {items.length === 0 && !addingItem && (
-          <GradientCard colors={GRADIENT_PRESETS.subtle} style={styles.emptyCardOuter}>
+          <GradientCard colors={GRADIENT_PRESETS.subtle}>
             <View style={styles.emptyContent}>
               <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
               <Text style={styles.emptyText}>
-                Bewaar hier je gevoelige documenten, wachtwoorden en notities.
+                Doorloop de stappen in 'Te Doen' — je gegevens worden automatisch hier opgeslagen.
               </Text>
             </View>
           </GradientCard>
@@ -287,26 +331,50 @@ export default function VaultScreen() {
         ].filter((s) => s.items.length > 0).map((section) => (
           <View key={section.cat} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.items.map((item) => (
-              <Card key={item.id} style={styles.itemCard}>
-                <View style={styles.itemRow}>
-                  <View style={[styles.itemIcon, { backgroundColor: `${getCategoryColor(item.category)}15` }]}>
-                    <Ionicons name={getCategoryIcon(item.category)} size={18} color={getCategoryColor(item.category)} />
-                  </View>
-                  <View style={styles.itemContent}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    {item.content ? (
-                      <Text style={styles.itemText}>
-                        {item.category === 'password' ? '••••••••' : item.content}
-                      </Text>
+            {section.items.map((item) => {
+              const isExpanded = expandedItem === item.id;
+              const isPassword = item.category === 'password';
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.7}
+                  onPress={() => setExpandedItem(isExpanded ? null : item.id)}
+                >
+                  <Card style={styles.itemCard}>
+                    <View style={styles.itemRow}>
+                      <View style={[styles.itemIcon, { backgroundColor: `${getCategoryColor(item.category)}15` }]}>
+                        <Ionicons name={getCategoryIcon(item.category)} size={18} color={getCategoryColor(item.category)} />
+                      </View>
+                      <View style={styles.itemContent}>
+                        <Text style={styles.itemTitle}>{item.title}</Text>
+                        {!isExpanded && item.content ? (
+                          <Text style={styles.itemPreview}>
+                            {isPassword ? '••••••••' : item.content.split('\n')[0]}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color={Colors.textTertiary}
+                      />
+                    </View>
+                    {isExpanded && item.content ? (
+                      <View style={styles.itemExpanded}>
+                        <Text style={styles.itemFullContent}>{item.content}</Text>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteItem(item.id)}
+                          style={styles.deleteRow}
+                        >
+                          <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                          <Text style={styles.deleteText}>Verwijderen</Text>
+                        </TouchableOpacity>
+                      </View>
                     ) : null}
-                  </View>
-                  <TouchableOpacity onPress={() => handleDeleteItem(item.id)} style={styles.deleteBtn}>
-                    <Ionicons name="trash-outline" size={18} color={Colors.danger} />
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            ))}
+                  </Card>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ))}
 
@@ -356,12 +424,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lockScreen: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     padding: Spacing.lg,
-  },
-  lockCardOuter: {
-    // spacing handled by GradientCard
   },
   lockIconContainer: {
     width: 96,
@@ -388,6 +453,37 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     marginBottom: Spacing.lg,
   },
+  biometricButton: {
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.lg,
+    backgroundColor: 'rgba(167, 139, 250, 0.1)',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(167, 139, 250, 0.2)',
+    marginBottom: Spacing.md,
+  },
+  biometricText: {
+    fontSize: FontSizes.body,
+    fontWeight: FontWeights.semibold,
+    color: Colors.accent,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  dividerText: {
+    fontSize: FontSizes.small,
+    color: Colors.textTertiary,
+    fontWeight: FontWeights.medium,
+  },
   pinInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: BorderRadius.lg,
@@ -398,6 +494,22 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     textAlign: 'center',
     marginBottom: Spacing.md,
+  },
+  offlineWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  offlineWarningText: {
+    flex: 1,
+    fontSize: FontSizes.small,
+    color: Colors.warning,
+    lineHeight: 20,
+    fontWeight: FontWeights.medium,
   },
   addButtonWrap: {
     flexDirection: 'row',
@@ -468,9 +580,6 @@ const styles = StyleSheet.create({
   addButtons: {
     gap: Spacing.sm,
   },
-  emptyCardOuter: {
-    // spacing
-  },
   emptyContent: {
     alignItems: 'center',
     gap: Spacing.md,
@@ -523,12 +632,32 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.semibold,
     color: Colors.text,
   },
-  itemText: {
+  itemPreview: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    color: Colors.textTertiary,
   },
-  deleteBtn: {
-    padding: Spacing.sm,
+  itemExpanded: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.separator,
+    gap: Spacing.md,
+  },
+  itemFullContent: {
+    fontSize: FontSizes.body,
+    color: Colors.textSecondary,
+    lineHeight: 24,
+  },
+  deleteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingTop: Spacing.sm,
+  },
+  deleteText: {
+    fontSize: FontSizes.small,
+    color: Colors.danger,
+    fontWeight: FontWeights.medium,
   },
   bottomPadding: {
     height: Spacing.xxl,
