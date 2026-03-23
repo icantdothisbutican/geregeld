@@ -103,6 +103,10 @@ export default function ChecklistScreen() {
   }
 
   function navigateToFlow(itemId: string) {
+    if (itemId === 'boo-1') {
+      router.push('/messages');
+      return;
+    }
     if (itemId.startsWith('guide-step-')) {
       const stepNum = parseInt(itemId.replace('guide-step-', ''));
       const guideStep = GUIDE_STEPS.find((s) => s.step === stepNum);

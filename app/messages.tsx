@@ -11,13 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
-import { Card } from '../../src/components/Card';
-import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
-import { Button } from '../../src/components/Button';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../src/constants/theme';
+import { Card } from '../src/components/Card';
+import { GradientCard, GRADIENT_PRESETS } from '../src/components/GradientCard';
+import { Button } from '../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
-import { loadState, saveState, AppState, Message, generateId } from '../../src/store/appStore';
+import { loadState, saveState, AppState, Message, generateId } from '../src/store/appStore';
 
 type MessageType = 'text' | 'voice' | 'question';
 
@@ -57,6 +57,7 @@ const PROMPTS = [
 ];
 
 export default function MessagesScreen() {
+  const router = useRouter();
   const [state, setState] = useState<AppState | null>(null);
   const [composing, setComposing] = useState<MessageType | null>(null);
   const [title, setTitle] = useState('');
@@ -232,6 +233,10 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={22} color={Colors.text} />
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <Text style={styles.headerLabel}>Voor je naasten</Text>
           <Text style={styles.pageTitle}>Berichten</Text>

@@ -312,9 +312,11 @@ export const CHAPTERS: Chapter[] = [
       {
         id: 'boo-1',
         title: 'Persoonlijk bericht achterlaten',
-        description: 'Wil je een brief, audio- of videoboodschap achterlaten?',
+        description: 'Schrijf een boodschap, wijsheid of vraag voor je naasten.',
         urgency: 'low',
         duration: '15 min',
+        hasFlow: true,
+        actionLabel: 'Bericht schrijven',
       },
     ],
   },

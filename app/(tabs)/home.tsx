@@ -64,8 +64,6 @@ export default function HomeScreen() {
   }
 
   const progressPercent = Math.round(progress * 100);
-  const messageCount = (state.messages || []).length;
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -161,29 +159,6 @@ export default function HomeScreen() {
             )}
           </View>
         )}
-
-        {/* Messages teaser */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.push('/(tabs)/messages')}
-        >
-          <GradientCard colors={GRADIENT_PRESETS.glow} style={styles.messagesTeaser}>
-            <View style={styles.messagesTeaserRow}>
-              <View style={styles.messagesTeaserIcon}>
-                <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
-              </View>
-              <View style={styles.messagesTeaserContent}>
-                <Text style={styles.messagesTeaserTitle}>Laat een boodschap achter</Text>
-                <Text style={styles.messagesTeaserText}>
-                  {messageCount > 0
-                    ? `${messageCount} ${messageCount === 1 ? 'bericht' : 'berichten'} opgeslagen`
-                    : 'Wijsheid, herinneringen of een boodschap voor je naasten'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
-            </View>
-          </GradientCard>
-        </TouchableOpacity>
 
         {/* Trusted person */}
         {state.onboarding?.trustedPerson && (
@@ -377,35 +352,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: Spacing.xs,
     letterSpacing: -0.2,
-  },
-  messagesTeaser: {
-    marginBottom: Spacing.xl,
-  },
-  messagesTeaserRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  messagesTeaserIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  messagesTeaserContent: {
-    flex: 1,
-    gap: 2,
-  },
-  messagesTeaserTitle: {
-    fontSize: FontSizes.large,
-    fontWeight: FontWeights.bold,
-    color: '#fff',
-  },
-  messagesTeaserText: {
-    fontSize: FontSizes.small,
-    color: 'rgba(255, 255, 255, 0.7)',
   },
   infoCard: {
     marginBottom: Spacing.lg,
