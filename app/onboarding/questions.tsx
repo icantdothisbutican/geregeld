@@ -21,11 +21,10 @@ const TOTAL_STEPS = 8;
 interface StepConfig {
   question: string;
   subtitle: string;
-  type: 'choice' | 'text' | 'text-pair' | 'info';
+  type: 'choice' | 'text' | 'text-pair';
   options?: string[];
   placeholder?: string;
   placeholder2?: string;
-  infoText?: string;
 }
 
 const STEPS: StepConfig[] = [
@@ -84,7 +83,6 @@ export default function OnboardingQuestions() {
   const router = useRouter();
   const [step, setStep] = useState(0);
 
-  // Answers storage
   const [name, setName] = useState('');
   const [ageRange, setAgeRange] = useState<string | null>(null);
   const [hasPartner, setHasPartner] = useState<string | null>(null);
@@ -125,7 +123,7 @@ export default function OnboardingQuestions() {
   function canProceed(): boolean {
     switch (step) {
       case 0: return name.trim().length > 0;
-      case 7: return true; // trusted person is optional
+      case 7: return true;
       default: return getCurrentAnswer() !== null;
     }
   }
@@ -134,7 +132,6 @@ export default function OnboardingQuestions() {
     if (step < TOTAL_STEPS - 1) {
       setStep(step + 1);
     } else {
-      // Save everything
       const situation: UserSituation = {
         hasPartner: hasPartner === 'Ja',
         hasChildren: hasChildren === 'Ja',
@@ -172,21 +169,20 @@ export default function OnboardingQuestions() {
 
   function getButtonLabel(): string {
     if (isLastStep) {
-      return trustedName.trim() ? 'Start mijn checklist' : 'Sla over & start checklist';
+      return trustedName.trim() ? 'Start mijn checklist' : 'Sla over en start';
     }
     return 'Volgende';
   }
 
   function getStepHint(): string | null {
     switch (step) {
-      case 0: return null;
       case 1:
-        if (ageRange === '18-30') return 'Slim dat je hier nu al mee bezig bent!';
+        if (ageRange === '18-30') return 'Slim dat je hier nu al mee bezig bent.';
         if (ageRange === '65+') return 'Goed dat je dit regelt. We houden het simpel.';
         return null;
       case 5:
         if (hasTestament === 'Nee') return 'Geen zorgen — dit is een van de eerste dingen die we gaan regelen.';
-        if (hasTestament === 'Ja') return 'Top! We checken of je testament nog actueel is.';
+        if (hasTestament === 'Ja') return 'We checken of je testament nog actueel is.';
         return null;
       case 6:
         if (preferenceMode === 'Digitaal') return 'We laten je zien hoe je wachtwoorden veilig deelt via je telefoon.';
@@ -241,7 +237,7 @@ export default function OnboardingQuestions() {
                 <TextInput
                   style={styles.textInput}
                   placeholder={currentStep.placeholder}
-                  placeholderTextColor={Colors.slateMuted}
+                  placeholderTextColor={Colors.textTertiary}
                   value={name}
                   onChangeText={setName}
                   autoFocus
@@ -255,7 +251,7 @@ export default function OnboardingQuestions() {
                   <TextInput
                     style={styles.textInput}
                     placeholder={currentStep.placeholder}
-                    placeholderTextColor={Colors.slateMuted}
+                    placeholderTextColor={Colors.textTertiary}
                     value={trustedName}
                     onChangeText={setTrustedName}
                   />
@@ -263,7 +259,7 @@ export default function OnboardingQuestions() {
                     <TextInput
                       style={styles.textInput}
                       placeholder={currentStep.placeholder2}
-                      placeholderTextColor={Colors.slateMuted}
+                      placeholderTextColor={Colors.textTertiary}
                       value={trustedRelation}
                       onChangeText={setTrustedRelation}
                     />
@@ -305,7 +301,7 @@ export default function OnboardingQuestions() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -323,7 +319,7 @@ const styles = StyleSheet.create({
   },
   stepText: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     textAlign: 'center',
   },
   questionSection: {
@@ -332,18 +328,18 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: FontSizes.large,
-    color: Colors.terracotta,
+    color: Colors.accent,
     fontWeight: '600',
   },
   question: {
     fontSize: FontSizes.h1,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -357,27 +353,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   textInput: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     fontSize: FontSizes.large,
-    color: Colors.slate,
+    color: Colors.text,
     borderWidth: 2,
-    borderColor: Colors.warmGray,
+    borderColor: Colors.separator,
     textAlign: 'center',
   },
   textPairSection: {
     gap: Spacing.md,
   },
   hintBox: {
-    backgroundColor: Colors.greenBg,
+    backgroundColor: Colors.primaryLight,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginTop: Spacing.sm,
   },
   hintText: {
     fontSize: FontSizes.small,
-    color: Colors.greenDark,
+    color: Colors.primaryDark,
     textAlign: 'center',
     fontWeight: '500',
     lineHeight: 20,

@@ -76,7 +76,7 @@ const DEFAULT_STATE: AppState = {
   },
 };
 
-const STORAGE_KEY = '@geregeld_state';
+const STORAGE_KEY = '@geregeld_state_v2';
 
 export async function loadState(): Promise<AppState> {
   try {

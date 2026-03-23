@@ -7,15 +7,17 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { loadState, AppState } from '../../src/store/appStore';
-import { getFilteredChapters } from '../../src/data/checklist';
+import { getFilteredChapters, ChecklistItem } from '../../src/data/checklist';
 import { GUIDE_STEPS } from '../../src/data/guide';
+import { FLOWS } from '../../src/data/flows';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [state, setState] = useState<AppState | null>(null);
   const [expandedGuideStep, setExpandedGuideStep] = useState<number | null>(null);
 
@@ -28,15 +30,35 @@ export default function HomeScreen() {
   if (!state) return null;
 
   const chapters = getFilteredChapters(state.situation, state.onboarding);
-  const totalItems = chapters.reduce((sum, ch) => sum + ch.items.length, 0);
-  const checkedCount = state.checkedItems?.length || 0;
+  const allItems = chapters.flatMap((ch) => ch.items);
+  const totalItems = allItems.length;
+  const checkedItems = state.checkedItems || [];
+  const checkedCount = checkedItems.length;
   const progress = totalItems > 0 ? checkedCount / totalItems : 0;
   const userName = state.onboarding?.name || '';
 
-  // Find next priority item
-  const nextItem = chapters
-    .flatMap((ch) => ch.items)
-    .find((item) => !state.checkedItems?.includes(item.id) && item.urgency === 'high');
+  // Find 2 recommended activities: 1 big/hard + 1 easy
+  const uncheckedItems = allItems.filter((item) => !checkedItems.includes(item.id));
+
+  const bigTask = uncheckedItems.find(
+    (item) => item.urgency === 'high' && item.hasFlow
+  ) || uncheckedItems.find(
+    (item) => item.urgency === 'high'
+  );
+
+  const easyTask = uncheckedItems.find(
+    (item) => item.urgency !== 'high' && item.duration.includes('5 min') && item.id !== bigTask?.id
+  ) || uncheckedItems.find(
+    (item) => item.urgency === 'low' && item.id !== bigTask?.id
+  ) || uncheckedItems.find(
+    (item) => item.id !== bigTask?.id
+  );
+
+  function navigateToFlow(itemId: string) {
+    if (FLOWS[itemId]) {
+      router.push(`/flow/${itemId}`);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,8 +82,6 @@ export default function HomeScreen() {
           <ProgressBar progress={progress} />
           {progress === 1 ? (
             <Text style={styles.progressHint}>Alles geregeld! Goed bezig.</Text>
-          ) : progress === 0 ? (
-            <Text style={styles.progressHint}>Begin met je eerste stap</Text>
           ) : (
             <Text style={styles.progressHint}>
               Nog {totalItems - checkedCount} {totalItems - checkedCount === 1 ? 'ding' : 'dingen'} te regelen
@@ -69,51 +89,103 @@ export default function HomeScreen() {
           )}
         </Card>
 
-        {/* Next action */}
-        {nextItem && (
-          <Card style={styles.nextActionCard}>
-            <Text style={styles.nextActionLabel}>Volgende stap</Text>
-            <Text style={styles.nextActionTitle}>{nextItem.title}</Text>
-            <Text style={styles.nextActionDesc}>{nextItem.description}</Text>
-          </Card>
+        {/* Two recommended activities */}
+        {(bigTask || easyTask) && (
+          <View style={styles.recommendationsSection}>
+            <Text style={styles.sectionTitle}>Aanbevolen voor jou</Text>
+
+            {bigTask && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => bigTask.hasFlow ? navigateToFlow(bigTask.id) : null}
+              >
+                <Card style={styles.bigTaskCard}>
+                  <View style={styles.taskBadgeRow}>
+                    <View style={styles.importantBadge}>
+                      <Text style={styles.importantBadgeText}>Belangrijk</Text>
+                    </View>
+                    <Text style={styles.taskDuration}>{bigTask.duration}</Text>
+                  </View>
+                  <Text style={styles.bigTaskTitle}>{bigTask.title}</Text>
+                  <Text style={styles.taskDescription}>{bigTask.description}</Text>
+                  {bigTask.hasFlow && (
+                    <View style={styles.startFlow}>
+                      <Text style={styles.startFlowText}>
+                        {bigTask.actionLabel || 'Start'}
+                      </Text>
+                      <Text style={styles.startFlowArrow}>→</Text>
+                    </View>
+                  )}
+                </Card>
+              </TouchableOpacity>
+            )}
+
+            {easyTask && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => easyTask.hasFlow ? navigateToFlow(easyTask.id) : null}
+              >
+                <Card style={styles.easyTaskCard}>
+                  <View style={styles.taskBadgeRow}>
+                    <View style={styles.easyBadge}>
+                      <Text style={styles.easyBadgeText}>Snel te doen</Text>
+                    </View>
+                    <Text style={styles.taskDuration}>{easyTask.duration}</Text>
+                  </View>
+                  <Text style={styles.easyTaskTitle}>{easyTask.title}</Text>
+                  <Text style={styles.taskDescription}>{easyTask.description}</Text>
+                </Card>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
 
-        {/* Quick stats */}
+        {/* Trusted person */}
         {state.onboarding?.trustedPerson && (
           <Card style={styles.infoCard}>
-            <Text style={styles.infoIcon}>🤝</Text>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Vertrouwenspersoon</Text>
               <Text style={styles.infoValue}>
                 {state.onboarding.trustedPerson.name}
                 {state.onboarding.trustedPerson.relation
-                  ? ` (${state.onboarding.trustedPerson.relation})`
+                  ? ` — ${state.onboarding.trustedPerson.relation}`
                   : ''}
               </Text>
             </View>
           </Card>
         )}
 
+        {/* Shared account hint */}
+        <Card style={styles.sharedCard}>
+          <Text style={styles.sharedTitle}>Gedeeld account</Text>
+          <Text style={styles.sharedText}>
+            Dit account is ook via het web beschikbaar. Deel de toegang met je partner, kinderen of vertrouwenspersoon zodat zij ook dingen kunnen regelen.
+          </Text>
+        </Card>
+
         {/* Chapter overview */}
         <View style={styles.chaptersSection}>
           <Text style={styles.sectionTitle}>Hoofdstukken</Text>
           {chapters.map((chapter) => {
             const chapterChecked = chapter.items.filter(
-              (i) => state.checkedItems?.includes(i.id)
+              (i) => checkedItems.includes(i.id)
             ).length;
             const chapterDone = chapterChecked === chapter.items.length;
 
             return (
               <Card key={chapter.key} style={styles.chapterCard}>
                 <View style={styles.chapterRow}>
-                  <Text style={styles.chapterIcon}>{chapter.icon}</Text>
                   <View style={styles.chapterInfo}>
                     <Text style={styles.chapterLabel}>{chapter.label}</Text>
                     <Text style={styles.chapterCount}>
-                      {chapterChecked}/{chapter.items.length}
+                      {chapterChecked}/{chapter.items.length} afgerond
                     </Text>
                   </View>
-                  {chapterDone && <Text style={styles.chapterDone}>✓</Text>}
+                  {chapterDone && (
+                    <View style={styles.doneBadge}>
+                      <Text style={styles.doneBadgeText}>Klaar</Text>
+                    </View>
+                  )}
                 </View>
               </Card>
             );
@@ -124,18 +196,20 @@ export default function HomeScreen() {
         <View style={styles.guideSection}>
           <Text style={styles.sectionTitle}>Wat te doen bij een overlijden</Text>
           <Text style={styles.sectionSubtitle}>
-            Een stap-voor-stap gids voor nabestaanden
+            Een stap-voor-stap gids voor nabestaanden. Druk op een stap om direct geholpen te worden.
           </Text>
 
-          <View style={styles.importantCard}>
-            <Text style={styles.importantTitle}>Het allerbelangrijkste</Text>
-            <Text style={styles.importantText}>
+          <Card style={styles.importantNote}>
+            <Text style={styles.importantNoteTitle}>Het allerbelangrijkste</Text>
+            <Text style={styles.importantNoteText}>
               Neem de tijd om dit te verwerken. Deze stappen hoeven niet allemaal vandaag.
             </Text>
-          </View>
+          </Card>
 
           {GUIDE_STEPS.map((guideStep) => {
             const isExpanded = expandedGuideStep === guideStep.step;
+            const hasFlow = guideStep.flowId && FLOWS[guideStep.flowId];
+
             return (
               <Card key={guideStep.step} style={styles.guideCard}>
                 <TouchableOpacity
@@ -148,7 +222,10 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.guideInfo}>
                     <Text style={styles.guideTitle}>{guideStep.title}</Text>
-                    <Text style={styles.guideTiming}>{guideStep.timing}</Text>
+                    <View style={styles.guideMetaRow}>
+                      <Text style={styles.guideTiming}>{guideStep.timing}</Text>
+                      <Text style={styles.guideDuration}>{guideStep.duration}</Text>
+                    </View>
                   </View>
                   <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
                 </TouchableOpacity>
@@ -158,10 +235,20 @@ export default function HomeScreen() {
                     <Text style={styles.guideDescription}>{guideStep.description}</Text>
                     {guideStep.details.map((detail, i) => (
                       <View key={i} style={styles.detailRow}>
-                        <Text style={styles.detailBullet}>•</Text>
+                        <View style={styles.detailDot} />
                         <Text style={styles.detailText}>{detail}</Text>
                       </View>
                     ))}
+                    {hasFlow && (
+                      <TouchableOpacity
+                        style={styles.guideAction}
+                        onPress={() => router.push(`/flow/${guideStep.flowId}`)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.guideActionText}>Direct regelen</Text>
+                        <Text style={styles.guideActionArrow}>→</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               </Card>
@@ -170,7 +257,7 @@ export default function HomeScreen() {
 
           <View style={styles.bottomNote}>
             <Text style={styles.bottomNoteText}>
-              Deze gids is specifiek voor Nederland. Bij twijfel, raadpleeg altijd een professional.
+              Specifiek voor Nederland. Bij twijfel, raadpleeg altijd een professional.
             </Text>
           </View>
         </View>
@@ -184,7 +271,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -195,12 +282,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: FontSizes.h1,
-    fontWeight: '800',
-    color: Colors.slate,
+    fontWeight: '700',
+    color: Colors.text,
   },
   tagline: {
     fontSize: FontSizes.large,
-    color: Colors.terracotta,
+    color: Colors.accent,
     fontWeight: '600',
     fontStyle: 'italic',
     marginTop: Spacing.xs,
@@ -217,38 +304,106 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
   },
   progressCount: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   progressHint: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
-  nextActionCard: {
+  recommendationsSection: {
     marginBottom: Spacing.md,
-    backgroundColor: Colors.orangeBg,
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
-  nextActionLabel: {
-    fontSize: FontSizes.small,
+  sectionTitle: {
+    fontSize: FontSizes.h2,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  sectionSubtitle: {
+    fontSize: FontSizes.body,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+    marginTop: -Spacing.sm,
+    lineHeight: 24,
+  },
+  bigTaskCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.accent,
+    gap: Spacing.sm,
+  },
+  taskBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  importantBadge: {
+    backgroundColor: Colors.accentLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  importantBadgeText: {
+    fontSize: FontSizes.caption,
     fontWeight: '600',
-    color: Colors.terracotta,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    color: Colors.accent,
   },
-  nextActionTitle: {
+  taskDuration: {
+    fontSize: FontSizes.caption,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  bigTaskTitle: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
   },
-  nextActionDesc: {
+  taskDescription: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     lineHeight: 20,
+  },
+  startFlow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  startFlowText: {
+    fontSize: FontSizes.body,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  startFlowArrow: {
+    fontSize: FontSizes.body,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  easyTaskCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.primary,
+    gap: Spacing.sm,
+  },
+  easyBadge: {
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  easyBadgeText: {
+    fontSize: FontSizes.caption,
+    fontWeight: '600',
+    color: Colors.primaryDark,
+  },
+  easyTaskTitle: {
+    fontSize: FontSizes.large,
+    fontWeight: '600',
+    color: Colors.text,
   },
   infoCard: {
     marginBottom: Spacing.md,
@@ -256,37 +411,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
   },
-  infoIcon: {
-    fontSize: 28,
-  },
   infoContent: {
     flex: 1,
   },
   infoLabel: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   infoValue: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.slate,
+    color: Colors.text,
+  },
+  sharedCard: {
+    marginBottom: Spacing.lg,
+    backgroundColor: Colors.primaryLight,
+    gap: Spacing.sm,
+  },
+  sharedTitle: {
+    fontSize: FontSizes.body,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+  },
+  sharedText: {
+    fontSize: FontSizes.small,
+    color: Colors.primaryDark,
+    lineHeight: 20,
   },
   chaptersSection: {
     marginBottom: Spacing.lg,
     gap: Spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: FontSizes.h2,
-    fontWeight: '800',
-    color: Colors.slate,
-    marginBottom: Spacing.sm,
-  },
-  sectionSubtitle: {
-    fontSize: FontSizes.body,
-    color: Colors.slateMuted,
-    marginBottom: Spacing.md,
-    marginTop: -Spacing.sm,
-    lineHeight: 24,
   },
   chapterCard: {
     padding: Spacing.md,
@@ -294,46 +448,48 @@ const styles = StyleSheet.create({
   chapterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-  },
-  chapterIcon: {
-    fontSize: 24,
+    justifyContent: 'space-between',
   },
   chapterInfo: {
     flex: 1,
+    gap: 2,
   },
   chapterLabel: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.slate,
+    color: Colors.text,
   },
   chapterCount: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
-  chapterDone: {
-    fontSize: 18,
-    color: Colors.green,
-    fontWeight: '700',
+  doneBadge: {
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  doneBadgeText: {
+    fontSize: FontSizes.caption,
+    fontWeight: '600',
+    color: Colors.primaryDark,
   },
   guideSection: {
     marginBottom: Spacing.lg,
   },
-  importantCard: {
-    backgroundColor: Colors.orangeBg,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+  importantNote: {
+    backgroundColor: Colors.warningLight,
     marginBottom: Spacing.md,
     gap: Spacing.sm,
   },
-  importantTitle: {
+  importantNoteTitle: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
   },
-  importantText: {
+  importantNoteText: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     lineHeight: 24,
   },
   guideCard: {
@@ -351,12 +507,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.green,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   guideNumberText: {
-    color: Colors.white,
+    color: Colors.surface,
     fontSize: FontSizes.body,
     fontWeight: '700',
   },
@@ -367,53 +523,83 @@ const styles = StyleSheet.create({
   guideTitle: {
     fontSize: FontSizes.body,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
+  },
+  guideMetaRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
   },
   guideTiming: {
     fontSize: FontSizes.small,
-    color: Colors.terracotta,
+    color: Colors.accent,
     fontWeight: '500',
+  },
+  guideDuration: {
+    fontSize: FontSizes.small,
+    color: Colors.textSecondary,
   },
   expandIcon: {
     fontSize: 12,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   guideDetails: {
     borderTopWidth: 1,
-    borderTopColor: Colors.warmGray,
+    borderTopColor: Colors.separator,
     padding: Spacing.lg,
     gap: Spacing.sm,
   },
   guideDescription: {
     fontSize: FontSizes.body,
-    color: Colors.slate,
+    color: Colors.text,
     lineHeight: 24,
     marginBottom: Spacing.sm,
   },
   detailRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    alignItems: 'flex-start',
   },
-  detailBullet: {
-    fontSize: FontSizes.body,
-    color: Colors.green,
-    fontWeight: '700',
+  detailDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+    marginTop: 8,
   },
   detailText: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     flex: 1,
     lineHeight: 22,
   },
+  guideAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryLight,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+  },
+  guideActionText: {
+    fontSize: FontSizes.body,
+    fontWeight: '600',
+    color: Colors.primaryDark,
+  },
+  guideActionArrow: {
+    fontSize: FontSizes.large,
+    color: Colors.primaryDark,
+    fontWeight: '600',
+  },
   bottomNote: {
-    backgroundColor: Colors.warmGray,
+    backgroundColor: Colors.fill,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginTop: Spacing.md,
   },
   bottomNoteText: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
   },

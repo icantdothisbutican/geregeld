@@ -65,7 +65,7 @@ export default function ProfileScreen() {
           text: 'Reset',
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.removeItem('@geregeld_state');
+            await AsyncStorage.removeItem('@geregeld_state_v2');
             router.replace('/');
           },
         },
@@ -129,8 +129,27 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </Card>
 
+        {/* Shared account */}
+        <Card style={styles.sharedCard}>
+          <Text style={styles.sharedTitle}>Gedeeld account</Text>
+          <Text style={styles.sharedText}>
+            Deel de toegang met je partner, kinderen of vertrouwenspersoon. Iedereen kan inloggen via het web en helpen met het regelen van zaken.
+          </Text>
+          <Button
+            title="Uitnodiging versturen"
+            onPress={() =>
+              Alert.alert(
+                'Binnenkort beschikbaar',
+                'De deelfunctie is nog in ontwikkeling. Binnenkort kun je een uitnodiging versturen.'
+              )
+            }
+            variant="outline"
+            size="medium"
+          />
+        </Card>
+
         {/* Upgrade */}
-        <Card style={{ ...styles.sectionCard, ...styles.upgradeCard }}>
+        <Card style={styles.upgradeCard}>
           <Text style={styles.upgradeTitle}>Geregeld+</Text>
           <Text style={styles.upgradeText}>
             Ontgrendel de wachtwoordkluis, documentenkluis, PostNL-integratie en meer.
@@ -147,7 +166,7 @@ export default function ProfileScreen() {
             onPress={() =>
               Alert.alert(
                 'Binnenkort beschikbaar',
-                'Geregeld+ is nog in ontwikkeling. We laten je weten zodra het beschikbaar is!'
+                'Geregeld+ is nog in ontwikkeling.'
               )
             }
             variant="primary"
@@ -172,7 +191,7 @@ export default function ProfileScreen() {
           variant="outline"
           size="medium"
           style={{ marginTop: Spacing.md }}
-          textStyle={{ color: Colors.red }}
+          textStyle={{ color: Colors.danger }}
         />
 
         <View style={styles.bottomPadding} />
@@ -184,7 +203,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -196,12 +215,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSizes.h1,
-    fontWeight: '800',
-    color: Colors.slate,
+    fontWeight: '700',
+    color: Colors.text,
   },
   subtitle: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   statsCard: {
     marginBottom: Spacing.md,
@@ -210,7 +229,7 @@ const styles = StyleSheet.create({
   statsTitle: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
   },
   statsRow: {
     flexDirection: 'row',
@@ -223,17 +242,17 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: FontSizes.h1,
-    fontWeight: '800',
-    color: Colors.terracotta,
+    fontWeight: '700',
+    color: Colors.accent,
   },
   statLabel: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: Colors.warmGray,
+    backgroundColor: Colors.separator,
   },
   sectionCard: {
     marginBottom: Spacing.md,
@@ -242,7 +261,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
   },
   situationRow: {
     flexDirection: 'row',
@@ -251,34 +270,50 @@ const styles = StyleSheet.create({
   },
   situationLabel: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   situationValue: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.slate,
+    color: Colors.text,
   },
   editLink: {
     marginTop: Spacing.sm,
   },
   editLinkText: {
     fontSize: FontSizes.body,
-    color: Colors.terracotta,
+    color: Colors.accent,
     fontWeight: '600',
   },
+  sharedCard: {
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+    backgroundColor: Colors.primaryLight,
+  },
+  sharedTitle: {
+    fontSize: FontSizes.large,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+  },
+  sharedText: {
+    fontSize: FontSizes.body,
+    color: Colors.primaryDark,
+    lineHeight: 24,
+  },
   upgradeCard: {
-    backgroundColor: Colors.offWhite,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
     borderWidth: 2,
-    borderColor: Colors.terracotta,
+    borderColor: Colors.accent,
   },
   upgradeTitle: {
     fontSize: FontSizes.h2,
-    fontWeight: '800',
-    color: Colors.slate,
+    fontWeight: '700',
+    color: Colors.text,
   },
   upgradeText: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     lineHeight: 24,
   },
   upgradeFeatures: {
@@ -286,16 +321,16 @@ const styles = StyleSheet.create({
   },
   upgradeFeature: {
     fontSize: FontSizes.body,
-    color: Colors.slate,
+    color: Colors.text,
   },
   aboutText: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     lineHeight: 24,
   },
   aboutSubtext: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   bottomPadding: {
     height: Spacing.xxl,

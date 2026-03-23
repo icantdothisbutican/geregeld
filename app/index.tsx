@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../src/constants/theme';
 import { Button } from '../src/components/Button';
@@ -43,22 +43,22 @@ export default function WelcomeScreen() {
 
         <View style={styles.valueProps}>
           <View style={styles.valueProp}>
-            <Text style={styles.valuePropIcon}>⏱️</Text>
+            <Text style={styles.valuePropTitle}>10 min</Text>
             <Text style={styles.valuePropText}>Klaar in 10 minuten</Text>
           </View>
           <View style={styles.valueProp}>
-            <Text style={styles.valuePropIcon}>🆓</Text>
+            <Text style={styles.valuePropTitle}>Gratis</Text>
             <Text style={styles.valuePropText}>Gratis te starten</Text>
           </View>
           <View style={styles.valueProp}>
-            <Text style={styles.valuePropIcon}>🔒</Text>
-            <Text style={styles.valuePropText}>Veilig & privé</Text>
+            <Text style={styles.valuePropTitle}>Veilig</Text>
+            <Text style={styles.valuePropText}>Veilig en prive</Text>
           </View>
         </View>
 
         <View style={styles.buttonSection}>
           <Button
-            title="Bekijk de checklist"
+            title="Begin met regelen"
             onPress={() => router.push('/onboarding/questions')}
             variant="primary"
           />
@@ -72,7 +72,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   center: {
     justifyContent: 'center',
@@ -91,13 +91,13 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: FontSizes.hero,
-    fontWeight: '800',
-    color: Colors.slate,
+    fontWeight: '700',
+    color: Colors.text,
     letterSpacing: -1,
   },
   tagline: {
     fontSize: FontSizes.h2,
-    color: Colors.terracotta,
+    color: Colors.accent,
     fontWeight: '600',
     marginTop: Spacing.sm,
     fontStyle: 'italic',
@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
   },
   mainMessage: {
     fontSize: FontSizes.h3,
-    color: Colors.slate,
+    color: Colors.text,
     textAlign: 'center',
     lineHeight: 30,
     fontWeight: '500',
   },
   subMessage: {
     fontSize: FontSizes.h3,
-    color: Colors.terracotta,
+    color: Colors.accent,
     textAlign: 'center',
     fontWeight: '700',
     marginTop: Spacing.xs,
@@ -129,13 +129,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  valuePropIcon: {
-    fontSize: 28,
+  valuePropTitle: {
+    fontSize: FontSizes.large,
+    fontWeight: '700',
+    color: Colors.text,
     marginBottom: Spacing.xs,
   },
   valuePropText: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -144,7 +146,7 @@ const styles = StyleSheet.create({
   },
   buttonSubtext: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     marginTop: Spacing.sm,
   },
 });

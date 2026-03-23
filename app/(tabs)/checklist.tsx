@@ -7,19 +7,20 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { loadState, saveState, AppState } from '../../src/store/appStore';
 import { getFilteredChapters, Chapter } from '../../src/data/checklist';
+import { FLOWS } from '../../src/data/flows';
 
 function UrgencyBadge({ urgency }: { urgency: string }) {
   const config = {
-    high: { label: 'Belangrijk', bg: Colors.redBg, color: Colors.red },
-    medium: { label: 'Aanbevolen', bg: Colors.orangeBg, color: Colors.orange },
-    low: { label: 'Optioneel', bg: Colors.greenBg, color: Colors.greenDark },
-  }[urgency] || { label: '', bg: Colors.warmGray, color: Colors.slate };
+    high: { label: 'Belangrijk', bg: Colors.dangerLight, color: Colors.danger },
+    medium: { label: 'Aanbevolen', bg: Colors.warningLight, color: Colors.warning },
+    low: { label: 'Optioneel', bg: Colors.primaryLight, color: Colors.primaryDark },
+  }[urgency] || { label: '', bg: Colors.fill, color: Colors.text };
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
@@ -29,6 +30,7 @@ function UrgencyBadge({ urgency }: { urgency: string }) {
 }
 
 export default function ChecklistScreen() {
+  const router = useRouter();
   const [state, setState] = useState<AppState | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
@@ -54,6 +56,12 @@ export default function ChecklistScreen() {
       : [...checkedItems, itemId];
     await saveState({ checkedItems: newChecked });
     setState((prev) => prev ? { ...prev, checkedItems: newChecked } : prev);
+  }
+
+  function navigateToFlow(itemId: string) {
+    if (FLOWS[itemId]) {
+      router.push(`/flow/${itemId}`);
+    }
   }
 
   return (
@@ -84,36 +92,37 @@ export default function ChecklistScreen() {
                 onPress={() => setExpandedChapter(isExpanded ? null : chapter.key)}
                 activeOpacity={0.7}
               >
-                <View style={styles.chapterTitleRow}>
-                  <Text style={styles.chapterIcon}>{chapter.icon}</Text>
-                  <View style={styles.chapterTitleContent}>
-                    <Text style={styles.chapterLabel}>{chapter.label}</Text>
-                    <Text style={styles.chapterDesc}>{chapter.description}</Text>
-                  </View>
+                <View style={styles.chapterTitleContent}>
+                  <Text style={styles.chapterLabel}>{chapter.label}</Text>
+                  <Text style={styles.chapterDesc}>{chapter.description}</Text>
                 </View>
                 <View style={styles.chapterMeta}>
-                  <Text style={[
-                    styles.chapterCount,
-                    chapterDone && styles.chapterCountDone,
-                  ]}>
-                    {chapterChecked}/{chapter.items.length}
-                  </Text>
+                  {chapterDone ? (
+                    <View style={styles.doneBadge}>
+                      <Text style={styles.doneBadgeText}>Klaar</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.chapterCount}>
+                      {chapterChecked}/{chapter.items.length}
+                    </Text>
+                  )}
                   <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
                 </View>
               </TouchableOpacity>
 
               {isExpanded && (
-                <View style={styles.chapterItems}>
+                <View>
                   {chapter.items.map((item) => {
                     const isChecked = checkedItems.includes(item.id);
+                    const hasFlow = item.hasFlow && FLOWS[item.id];
+
                     return (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={[styles.checkItem, isChecked && styles.checkItemDone]}
-                        onPress={() => toggleItem(item.id)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.checkRow}>
+                      <View key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]}>
+                        <TouchableOpacity
+                          style={styles.checkRow}
+                          onPress={() => toggleItem(item.id)}
+                          activeOpacity={0.7}
+                        >
                           <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
                             {isChecked && <Text style={styles.checkmark}>✓</Text>}
                           </View>
@@ -124,18 +133,24 @@ export default function ChecklistScreen() {
                             <Text style={styles.checkDescription}>{item.description}</Text>
                             <View style={styles.checkMeta}>
                               <UrgencyBadge urgency={item.urgency} />
-                              {item.actionLabel && !isChecked && (
-                                <View style={styles.actionBadge}>
-                                  <Text style={styles.actionBadgeText}>{item.actionLabel}</Text>
-                                </View>
-                              )}
+                              <Text style={styles.itemDuration}>{item.duration}</Text>
                             </View>
-                            {item.actionHint && !isChecked && (
-                              <Text style={styles.actionHint}>{item.actionHint}</Text>
-                            )}
                           </View>
-                        </View>
-                      </TouchableOpacity>
+                        </TouchableOpacity>
+
+                        {hasFlow && !isChecked && (
+                          <TouchableOpacity
+                            style={styles.flowButton}
+                            onPress={() => navigateToFlow(item.id)}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.flowButtonText}>
+                              {item.actionLabel || 'Direct regelen'}
+                            </Text>
+                            <Text style={styles.flowButtonArrow}>→</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     );
                   })}
                 </View>
@@ -153,7 +168,7 @@ export default function ChecklistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -164,23 +179,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSizes.h1,
-    fontWeight: '800',
-    color: Colors.slate,
+    fontWeight: '700',
+    color: Colors.text,
     marginTop: Spacing.md,
   },
   subtitle: {
     fontSize: FontSizes.body,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   completeBanner: {
-    backgroundColor: Colors.greenBg,
+    backgroundColor: Colors.primaryLight,
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.sm,
   },
   completeText: {
     fontSize: FontSizes.body,
-    color: Colors.greenDark,
+    color: Colors.primaryDark,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -195,27 +210,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  chapterTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    flex: 1,
-  },
-  chapterIcon: {
-    fontSize: 24,
-  },
   chapterTitleContent: {
     flex: 1,
     gap: 2,
+    marginRight: Spacing.md,
   },
   chapterLabel: {
     fontSize: FontSizes.large,
     fontWeight: '700',
-    color: Colors.slate,
+    color: Colors.text,
   },
   chapterDesc: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   chapterMeta: {
     flexDirection: 'row',
@@ -224,24 +231,31 @@ const styles = StyleSheet.create({
   },
   chapterCount: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     fontWeight: '600',
   },
-  chapterCountDone: {
-    color: Colors.greenDark,
+  doneBadge: {
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  doneBadgeText: {
+    fontSize: FontSizes.caption,
+    fontWeight: '600',
+    color: Colors.primaryDark,
   },
   expandIcon: {
     fontSize: 12,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
-  chapterItems: {},
   checkItem: {
     borderTopWidth: 1,
-    borderTopColor: Colors.warmGray,
+    borderTopColor: Colors.separator,
     padding: Spacing.lg,
   },
   checkItemDone: {
-    backgroundColor: Colors.greenBg,
+    backgroundColor: Colors.primaryLight,
   },
   checkRow: {
     flexDirection: 'row',
@@ -252,17 +266,17 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: BorderRadius.sm,
     borderWidth: 2,
-    borderColor: Colors.warmGray,
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
   checkboxChecked: {
-    backgroundColor: Colors.green,
-    borderColor: Colors.green,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   checkmark: {
-    color: Colors.white,
+    color: Colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -273,22 +287,21 @@ const styles = StyleSheet.create({
   checkTitle: {
     fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.slate,
+    color: Colors.text,
   },
   checkTitleDone: {
     textDecorationLine: 'line-through',
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
   },
   checkDescription: {
     fontSize: FontSizes.small,
-    color: Colors.slateMuted,
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   checkMeta: {
     flexDirection: 'row',
     gap: Spacing.sm,
     alignItems: 'center',
-    flexWrap: 'wrap',
   },
   badge: {
     alignSelf: 'flex-start',
@@ -297,25 +310,31 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: FontSizes.caption,
     fontWeight: '600',
   },
-  actionBadge: {
-    backgroundColor: Colors.terracotta,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
+  itemDuration: {
+    fontSize: FontSizes.caption,
+    color: Colors.textSecondary,
   },
-  actionBadgeText: {
-    fontSize: 12,
+  flowButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryLight,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+    marginLeft: 44,
+  },
+  flowButtonText: {
+    fontSize: FontSizes.body,
     fontWeight: '600',
-    color: Colors.white,
+    color: Colors.primaryDark,
   },
-  actionHint: {
-    fontSize: FontSizes.small,
-    color: Colors.terracotta,
-    fontStyle: 'italic',
-    marginTop: 2,
+  flowButtonArrow: {
+    fontSize: FontSizes.large,
+    color: Colors.primaryDark,
   },
   bottomPadding: {
     height: Spacing.xxl,
