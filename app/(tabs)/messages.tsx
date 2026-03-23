@@ -27,21 +27,21 @@ const MESSAGE_TYPES: { type: MessageType; icon: string; label: string; descripti
     icon: 'heart-outline',
     label: 'Boodschap',
     description: 'Wijsheid, herinneringen of een liefdesbrief',
-    colors: GRADIENT_PRESETS.warmSunrise,
+    colors: GRADIENT_PRESETS.warm,
   },
   {
     type: 'voice',
     icon: 'mic-outline',
     label: 'Spraaknotitie',
     description: 'Spreek een boodschap in met je eigen stem',
-    colors: GRADIENT_PRESETS.oceanBlue,
+    colors: GRADIENT_PRESETS.cool,
   },
   {
     type: 'question',
     icon: 'help-circle-outline',
     label: 'Vraag',
     description: 'Stel een vraag die pas later beantwoord wordt',
-    colors: GRADIENT_PRESETS.tropicalTeal,
+    colors: GRADIENT_PRESETS.glow,
   },
 ];
 
@@ -131,9 +131,9 @@ export default function MessagesScreen() {
 
   function getTypeGradient(type: MessageType): string[] {
     switch (type) {
-      case 'text': return GRADIENT_PRESETS.warmSunrise;
-      case 'voice': return GRADIENT_PRESETS.oceanBlue;
-      case 'question': return GRADIENT_PRESETS.tropicalTeal;
+      case 'text': return GRADIENT_PRESETS.warm;
+      case 'voice': return GRADIENT_PRESETS.cool;
+      case 'question': return GRADIENT_PRESETS.glow;
     }
   }
 

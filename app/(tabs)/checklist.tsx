@@ -153,16 +153,14 @@ export default function ChecklistScreen() {
           const isGuide = chapter.key === 'overlijden-gids';
 
           // Alternate gradient colors for visual variety
+          // Alternate between cool and soft for regular chapters
+          // Guide chapter (nabestaanden) gets warm gradient
           const chapterGradients = [
-            GRADIENT_PRESETS.oceanBlue,
-            GRADIENT_PRESETS.warmSunrise,
-            GRADIENT_PRESETS.tropicalTeal,
-            GRADIENT_PRESETS.roseGold,
-            GRADIENT_PRESETS.warmOrange,
-            GRADIENT_PRESETS.skyGradient,
+            GRADIENT_PRESETS.cool,
+            GRADIENT_PRESETS.soft,
           ];
           const gradientColors = isGuide
-            ? GRADIENT_PRESETS.warmSunrise
+            ? GRADIENT_PRESETS.warm
             : chapterGradients[chapterIndex % chapterGradients.length];
 
           return (

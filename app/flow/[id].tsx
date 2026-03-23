@@ -148,7 +148,7 @@ export default function FlowScreen() {
           </View>
 
           {currentStep === 0 && (
-            <GradientCard colors={GRADIENT_PRESETS.oceanBlue} style={styles.flowIntroCard}>
+            <GradientCard colors={GRADIENT_PRESETS.cool} style={styles.flowIntroCard}>
               <Text style={styles.flowTitle}>{flow.title}</Text>
               <Text style={styles.flowSubtitle}>{flow.subtitle}</Text>
               <View style={styles.durationBadge}>

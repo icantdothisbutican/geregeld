@@ -88,7 +88,7 @@ export default function HomeScreen() {
 
         {/* Progress Card */}
         <GradientCard
-          colors={GRADIENT_PRESETS.oceanBlue}
+          colors={GRADIENT_PRESETS.cool}
           style={styles.progressCardOuter}
         >
           <View style={styles.progressHeader}>
@@ -121,7 +121,7 @@ export default function HomeScreen() {
                 activeOpacity={0.7}
                 onPress={() => bigTask.hasFlow ? navigateToFlow(bigTask.id) : null}
               >
-                <GradientCard colors={GRADIENT_PRESETS.warmSunrise} style={styles.taskCardOuter}>
+                <GradientCard colors={GRADIENT_PRESETS.warm} style={styles.taskCardOuter}>
                   <View style={styles.taskBadgeRow}>
                     <View style={styles.importantBadge}>
                       <Text style={styles.importantBadgeText}>Belangrijk</Text>
@@ -147,7 +147,7 @@ export default function HomeScreen() {
                 activeOpacity={0.7}
                 onPress={() => easyTask.hasFlow ? navigateToFlow(easyTask.id) : null}
               >
-                <GradientCard colors={GRADIENT_PRESETS.tropicalTeal} style={styles.taskCardOuter}>
+                <GradientCard colors={GRADIENT_PRESETS.cool} style={styles.taskCardOuter}>
                   <View style={styles.taskBadgeRow}>
                     <View style={styles.easyBadge}>
                       <Text style={styles.easyBadgeText}>Snel te doen</Text>
@@ -167,7 +167,7 @@ export default function HomeScreen() {
           activeOpacity={0.7}
           onPress={() => router.push('/(tabs)/messages')}
         >
-          <GradientCard colors={GRADIENT_PRESETS.roseGold} style={styles.messagesTeaser}>
+          <GradientCard colors={GRADIENT_PRESETS.glow} style={styles.messagesTeaser}>
             <View style={styles.messagesTeaserRow}>
               <View style={styles.messagesTeaserIcon}>
                 <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />

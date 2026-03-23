@@ -89,7 +89,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Progress overview */}
-        <GradientCard colors={GRADIENT_PRESETS.oceanBlue} style={styles.statsCardOuter}>
+        <GradientCard colors={GRADIENT_PRESETS.cool} style={styles.statsCardOuter}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{checkedCount}</Text>
@@ -134,7 +134,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Shared account */}
-        <GradientCard colors={GRADIENT_PRESETS.tropicalTeal} style={styles.sharedCardOuter}>
+        <GradientCard colors={GRADIENT_PRESETS.soft} style={styles.sharedCardOuter}>
           <Text style={styles.sharedTitle}>Gedeeld account</Text>
           <Text style={styles.sharedText}>
             Deel de toegang met je partner, kinderen of vertrouwenspersoon.

@@ -167,7 +167,7 @@ export default function VaultScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.lockScreen} keyboardShouldPersistTaps="handled">
-          <GradientCard colors={GRADIENT_PRESETS.oceanBlue}>
+          <GradientCard colors={GRADIENT_PRESETS.cool}>
             <View style={styles.lockIconContainer}>
               <Ionicons name="shield-checkmark" size={48} color={Colors.accent} />
             </View>
@@ -205,7 +205,7 @@ export default function VaultScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.lockScreen} keyboardShouldPersistTaps="handled">
-          <GradientCard colors={GRADIENT_PRESETS.deepOcean}>
+          <GradientCard colors={GRADIENT_PRESETS.soft}>
             <View style={styles.lockIconContainer}>
               <Ionicons name="lock-closed" size={48} color={Colors.accent} />
             </View>
@@ -313,7 +313,7 @@ export default function VaultScreen() {
         )}
 
         {items.length === 0 && !addingItem && (
-          <GradientCard colors={GRADIENT_PRESETS.skyGradient}>
+          <GradientCard colors={GRADIENT_PRESETS.subtle}>
             <View style={styles.emptyContent}>
               <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
