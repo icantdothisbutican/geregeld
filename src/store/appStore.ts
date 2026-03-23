@@ -45,6 +45,15 @@ export interface VaultItem {
   createdAt: string;
 }
 
+export interface Message {
+  id: string;
+  type: 'text' | 'voice' | 'question';
+  title: string;
+  content: string;
+  recipient?: string;
+  createdAt: string;
+}
+
 export interface AppState {
   hasCompletedOnboarding: boolean;
   situation: UserSituation;
@@ -56,6 +65,7 @@ export interface AppState {
   vaultPin: string | null;
   vaultItems: VaultItem[];
   vaultUnlocked: boolean;
+  messages: Message[];
 }
 
 const DEFAULT_STATE: AppState = {
@@ -90,6 +100,7 @@ const DEFAULT_STATE: AppState = {
   vaultPin: null,
   vaultItems: [],
   vaultUnlocked: false,
+  messages: [],
 };
 
 const STORAGE_KEY = '@geregeld_state_v2';

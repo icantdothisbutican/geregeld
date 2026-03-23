@@ -10,9 +10,9 @@ export const Colors = {
   primaryLight: 'rgba(45, 212, 191, 0.15)',
   primaryDark: '#14B8A6',
 
-  // Accent - soft violet (warmth, attention)
-  accent: '#A78BFA',
-  accentLight: 'rgba(167, 139, 250, 0.15)',
+  // Accent - warm coral/pink
+  accent: '#F5576C',
+  accentLight: 'rgba(245, 87, 108, 0.15)',
 
   // Secondary accent - warm pink
   pink: '#F472B6',
@@ -37,10 +37,10 @@ export const Colors = {
   border: 'rgba(255, 255, 255, 0.10)',
 
   // Gradient colors
-  gradientPurple: '#7C3AED',
-  gradientTeal: '#2DD4BF',
-  gradientPink: '#EC4899',
-  gradientBlue: '#3B82F6',
+  gradientPink: '#F5576C',
+  gradientOrange: '#FDA085',
+  gradientBlue: '#667EEA',
+  gradientTeal: '#4DD0E1',
 
   // Legacy aliases
   cream: '#0B0B14',
@@ -48,8 +48,8 @@ export const Colors = {
   greenLight: 'rgba(45, 212, 191, 0.15)',
   greenDark: '#14B8A6',
   greenBg: 'rgba(45, 212, 191, 0.15)',
-  terracotta: '#A78BFA',
-  terracottaLight: 'rgba(167, 139, 250, 0.15)',
+  terracotta: '#F5576C',
+  terracottaLight: 'rgba(245, 87, 108, 0.15)',
   slate: '#F1F1F6',
   slateMuted: '#9CA3AF',
   white: '#F1F1F6',

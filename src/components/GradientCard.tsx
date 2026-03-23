@@ -12,21 +12,35 @@ interface GradientCardProps {
 }
 
 export const GRADIENT_PRESETS = {
-  purple: ['#2D1B69', '#1A1A2E'],
-  teal: ['#0D3B3B', '#1A1A2E'],
-  pink: ['#3D1B3B', '#1A1A2E'],
-  purpleTeal: ['#2D1B69', '#0D3B3B'],
-  pinkPurple: ['#3D1B3B', '#2D1B69'],
-  tealGreen: ['#0D3B3B', '#1B3D2B'],
-  warmSunset: ['#3D2B1B', '#2D1B3B'],
-  accent: ['rgba(167, 139, 250, 0.2)', 'rgba(45, 212, 191, 0.1)'],
-  subtle: ['rgba(167, 139, 250, 0.08)', 'rgba(45, 212, 191, 0.04)'],
+  // Warm vibrant gradients inspired by the reference images
+  sunsetPink: ['#E8457C', '#F4845F', '#F7B267'],
+  oceanBlue: ['#667EEA', '#64B5F6', '#4DD0E1'],
+  warmSunrise: ['#F093FB', '#F5576C', '#FFC371'],
+  tropicalTeal: ['#43E97B', '#38F9D7', '#4FACFE'],
+  coralPeach: ['#FF9A9E', '#FECFEF', '#FBC2EB'],
+  skyGradient: ['#A1C4FD', '#C2E9FB', '#667EEA'],
+  warmOrange: ['#F6D365', '#FDA085', '#F5576C'],
+  pinkBlue: ['#F093FB', '#667EEA', '#64B5F6'],
+  candySunset: ['#FA709A', '#FEE140', '#FA709A'],
+  mintFresh: ['#38F9D7', '#43E97B', '#66BB6A'],
+  roseGold: ['#F5576C', '#FF9A9E', '#FECFEF'],
+  deepOcean: ['#667EEA', '#764BA2', '#F093FB'],
+
+  // Dark card variations (for dark backgrounds)
+  darkWarm: ['#2A1520', '#1A1025'],
+  darkOcean: ['#0F1B2D', '#0A1628'],
+  darkTeal: ['#0D2420', '#0A1A18'],
+  darkSunset: ['#2A1A10', '#1A1020'],
+
+  // Subtle overlays
+  accent: ['rgba(102, 126, 234, 0.15)', 'rgba(77, 208, 225, 0.08)'],
+  subtle: ['rgba(240, 147, 251, 0.08)', 'rgba(102, 126, 234, 0.04)'],
 };
 
 export function GradientCard({
   children,
   style,
-  colors = GRADIENT_PRESETS.purpleTeal,
+  colors = GRADIENT_PRESETS.oceanBlue,
   start = { x: 0, y: 0 },
   end = { x: 1, y: 1 },
 }: GradientCardProps) {
@@ -46,13 +60,13 @@ export function GradientCard({
 
 const styles = StyleSheet.create({
   wrapper: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   gradient: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xl,
   },
 });

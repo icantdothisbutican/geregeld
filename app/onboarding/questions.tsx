@@ -299,7 +299,7 @@ export default function OnboardingQuestions() {
 
               {hint && (
                 <LinearGradient
-                  colors={['rgba(167, 139, 250, 0.12)', 'rgba(45, 212, 191, 0.08)']}
+                  colors={['rgba(102, 126, 234, 0.12)', 'rgba(77, 208, 225, 0.08)']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.hintBox}
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginTop: Spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.15)',
+    borderColor: 'rgba(102, 126, 234, 0.15)',
   },
   hintText: {
     fontSize: FontSizes.small,

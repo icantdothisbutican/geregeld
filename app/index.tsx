@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
 
         <View style={styles.valuePropsContainer}>
           <LinearGradient
-            colors={['rgba(167, 139, 250, 0.12)', 'rgba(45, 212, 191, 0.08)']}
+            colors={['rgba(102, 126, 234, 0.12)', 'rgba(77, 208, 225, 0.08)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.valuePropsGradient}

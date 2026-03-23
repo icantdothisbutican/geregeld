@@ -126,7 +126,7 @@ export default function ChecklistScreen() {
         </View>
 
         {/* Progress summary */}
-        <GradientCard colors={GRADIENT_PRESETS.accent} style={styles.progressCard}>
+        <GradientCard colors={GRADIENT_PRESETS.subtle} style={styles.progressCard}>
           <View style={styles.progressRow}>
             <View>
               <Text style={styles.progressPercent}>{Math.round(progress * 100)}%</Text>
@@ -154,15 +154,15 @@ export default function ChecklistScreen() {
 
           // Alternate gradient colors for visual variety
           const chapterGradients = [
-            GRADIENT_PRESETS.purple,
-            GRADIENT_PRESETS.teal,
-            GRADIENT_PRESETS.pinkPurple,
-            GRADIENT_PRESETS.tealGreen,
-            GRADIENT_PRESETS.warmSunset,
-            GRADIENT_PRESETS.purpleTeal,
+            GRADIENT_PRESETS.oceanBlue,
+            GRADIENT_PRESETS.warmSunrise,
+            GRADIENT_PRESETS.tropicalTeal,
+            GRADIENT_PRESETS.roseGold,
+            GRADIENT_PRESETS.warmOrange,
+            GRADIENT_PRESETS.skyGradient,
           ];
           const gradientColors = isGuide
-            ? GRADIENT_PRESETS.pinkPurple
+            ? GRADIENT_PRESETS.warmSunrise
             : chapterGradients[chapterIndex % chapterGradients.length];
 
           return (
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   chapterWrapper: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     gap: 0,
   },
   chapterHeader: {

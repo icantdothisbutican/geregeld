@@ -88,7 +88,7 @@ export default function FlowScreen() {
 
     const state = await loadState();
     const checkedItems = state.checkedItems || [];
-    if (!checkedItems.includes(flow.id)) {
+    if (flow && !checkedItems.includes(flow.id)) {
       await saveState({ checkedItems: [...checkedItems, flow.id] });
     }
     router.back();
@@ -148,7 +148,7 @@ export default function FlowScreen() {
           </View>
 
           {currentStep === 0 && (
-            <GradientCard colors={GRADIENT_PRESETS.purpleTeal} style={styles.flowIntroCard}>
+            <GradientCard colors={GRADIENT_PRESETS.oceanBlue} style={styles.flowIntroCard}>
               <Text style={styles.flowTitle}>{flow.title}</Text>
               <Text style={styles.flowSubtitle}>{flow.subtitle}</Text>
               <View style={styles.durationBadge}>
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
-    backgroundColor: 'rgba(167, 139, 250, 0.15)',
+    backgroundColor: 'rgba(102, 126, 234, 0.15)',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,

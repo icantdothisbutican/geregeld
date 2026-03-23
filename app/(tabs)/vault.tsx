@@ -167,7 +167,7 @@ export default function VaultScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.lockScreen} keyboardShouldPersistTaps="handled">
-          <GradientCard colors={GRADIENT_PRESETS.purpleTeal}>
+          <GradientCard colors={GRADIENT_PRESETS.oceanBlue}>
             <View style={styles.lockIconContainer}>
               <Ionicons name="shield-checkmark" size={48} color={Colors.accent} />
             </View>
@@ -205,7 +205,7 @@ export default function VaultScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.lockScreen} keyboardShouldPersistTaps="handled">
-          <GradientCard colors={GRADIENT_PRESETS.purple}>
+          <GradientCard colors={GRADIENT_PRESETS.deepOcean}>
             <View style={styles.lockIconContainer}>
               <Ionicons name="lock-closed" size={48} color={Colors.accent} />
             </View>
@@ -313,7 +313,7 @@ export default function VaultScreen() {
         )}
 
         {items.length === 0 && !addingItem && (
-          <GradientCard colors={GRADIENT_PRESETS.subtle}>
+          <GradientCard colors={GRADIENT_PRESETS.skyGradient}>
             <View style={styles.emptyContent}>
               <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(167, 139, 250, 0.15)',
+    backgroundColor: 'rgba(245, 87, 108, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -457,10 +457,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     paddingVertical: Spacing.lg,
-    backgroundColor: 'rgba(167, 139, 250, 0.1)',
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.2)',
+    borderColor: 'rgba(102, 126, 234, 0.2)',
     marginBottom: Spacing.md,
   },
   biometricText: {
