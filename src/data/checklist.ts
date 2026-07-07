@@ -257,6 +257,8 @@ export const CHAPTERS: Chapter[] = [
         description: 'Je keuze wordt opgeslagen zodat je naasten niet hoeven te twijfelen.',
         urgency: 'medium',
         duration: '2 min',
+        hasFlow: true,
+        actionLabel: 'Keuze vastleggen',
       },
       {
         id: 'uit-2',
@@ -264,6 +266,8 @@ export const CHAPTERS: Chapter[] = [
         description: 'Heb je een voorkeur voor een specifieke locatie?',
         urgency: 'low',
         duration: '5 min',
+        hasFlow: true,
+        actionLabel: 'Locatie invullen',
       },
       {
         id: 'uit-3',
@@ -271,6 +275,8 @@ export const CHAPTERS: Chapter[] = [
         description: 'Welke muziek wil je? Wie mag er spreken?',
         urgency: 'low',
         duration: '10 min',
+        hasFlow: true,
+        actionLabel: 'Wensen invullen',
       },
     ],
   },

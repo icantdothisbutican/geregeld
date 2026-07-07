@@ -31,7 +31,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Geregeld gebruikt Face ID om je kluis met gevoelige documenten te ontgrendelen."
+        }
+      ]
     ]
   }
 }

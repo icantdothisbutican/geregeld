@@ -8,16 +8,25 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as Crypto from 'expo-crypto';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { Button } from '../../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, saveState, AppState, VaultItem, generateId } from '../../src/store/appStore';
+
+async function hashPin(pin: string): Promise<string> {
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+}
+
+// A stored value is a hash when it's exactly 64 hex chars (SHA-256 output)
+function isHashed(stored: string): boolean {
+  return /^[a-f0-9]{64}$/i.test(stored);
+}
 
 export default function VaultScreen() {
   const [state, setState] = useState<AppState | null>(null);
@@ -85,16 +94,34 @@ export default function VaultScreen() {
       return;
     }
 
-    await saveState({ vaultPin: pinInput });
-    setState((prev) => prev ? { ...prev, vaultPin: pinInput } : prev);
+    // Never store the password itself — only its SHA-256 hash
+    const hashed = await hashPin(pinInput);
+    await saveState({ vaultPin: hashed });
+    setState((prev) => prev ? { ...prev, vaultPin: hashed } : prev);
     setIsSettingPin(false);
     setIsUnlocked(true);
     setPinInput('');
     setPinStep('enter');
   }
 
-  function handleUnlock() {
-    if (pinInput === state?.vaultPin) {
+  async function handleUnlock() {
+    const stored = state?.vaultPin;
+    if (!stored) return;
+
+    let matches = false;
+    if (isHashed(stored)) {
+      matches = (await hashPin(pinInput)) === stored;
+    } else {
+      // Legacy plaintext pin from an older version — verify and upgrade to a hash
+      matches = pinInput === stored;
+      if (matches) {
+        const hashed = await hashPin(pinInput);
+        await saveState({ vaultPin: hashed });
+        setState((prev) => prev ? { ...prev, vaultPin: hashed } : prev);
+      }
+    }
+
+    if (matches) {
       setIsUnlocked(true);
       setPinInput('');
     } else {

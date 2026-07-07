@@ -102,8 +102,14 @@ export default function MessagesScreen() {
     };
     const newVaultItems = [...vaultItems, vaultEntry];
 
-    await saveState({ messages: newMessages, vaultItems: newVaultItems });
-    setState((prev) => prev ? { ...prev, messages: newMessages, vaultItems: newVaultItems } : prev);
+    // Saving a first message completes the checklist item
+    const checkedItems = state?.checkedItems || [];
+    const newChecked = checkedItems.includes('boo-1')
+      ? checkedItems
+      : [...checkedItems, 'boo-1'];
+
+    await saveState({ messages: newMessages, vaultItems: newVaultItems, checkedItems: newChecked });
+    setState((prev) => prev ? { ...prev, messages: newMessages, vaultItems: newVaultItems, checkedItems: newChecked } : prev);
     setComposing(null);
     setTitle('');
     setContent('');

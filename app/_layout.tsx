@@ -18,6 +18,8 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding/questions" />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="flow/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="messages" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="wishes" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );

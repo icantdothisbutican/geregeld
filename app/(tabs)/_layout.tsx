@@ -53,9 +53,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="guide" options={{ href: null }} />
-      <Tabs.Screen name="contacts" options={{ href: null }} />
-      <Tabs.Screen name="wishes" options={{ href: null }} />
     </Tabs>
   );
 }

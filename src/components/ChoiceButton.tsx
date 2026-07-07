@@ -23,6 +23,7 @@ export function ChoiceButton({ label, selected, onPress }: ChoiceButtonProps) {
 const styles = StyleSheet.create({
   button: {
     flex: 1,
+    minWidth: 130,
     paddingVertical: Spacing.md + 4,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,

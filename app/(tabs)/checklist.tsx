@@ -107,11 +107,16 @@ export default function ChecklistScreen() {
       router.push('/messages');
       return;
     }
+    if (itemId.startsWith('uit-')) {
+      router.push('/wishes');
+      return;
+    }
     if (itemId.startsWith('guide-step-')) {
       const stepNum = parseInt(itemId.replace('guide-step-', ''));
       const guideStep = GUIDE_STEPS.find((s) => s.step === stepNum);
       if (guideStep?.flowId && FLOWS[guideStep.flowId]) {
-        router.push(`/flow/${guideStep.flowId}`);
+        // Pass the checklist item id so completing the flow checks this item
+        router.push(`/flow/${guideStep.flowId}?checkId=${itemId}`);
         return;
       }
     }
@@ -212,10 +217,14 @@ export default function ChecklistScreen() {
                   )}
                   {chapter.items.map((item, idx) => {
                     const isChecked = checkedItems.includes(item.id);
+                    // Items can link to a flow, or to a dedicated page
+                    // (berichten en uitvaartwensen hebben een eigen scherm)
+                    const hasOwnPage = item.id === 'boo-1' || item.id.startsWith('uit-');
                     const hasFlow = item.hasFlow && (
-                      item.id.startsWith('guide-step-')
+                      hasOwnPage ||
+                      (item.id.startsWith('guide-step-')
                         ? !!GUIDE_STEPS.find((s) => `guide-step-${s.step}` === item.id)?.flowId
-                        : !!FLOWS[item.id]
+                        : !!FLOWS[item.id])
                     );
 
                     return (

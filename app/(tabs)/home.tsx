@@ -32,12 +32,15 @@ export default function HomeScreen() {
 
   const chapters = getFilteredChapters(state.situation, state.onboarding);
   const allItems = chapters.flatMap((ch) => ch.items);
-  const guideItemCount = GUIDE_STEPS.length;
-  const totalItems = allItems.length + guideItemCount;
+  const totalItems = allItems.length + GUIDE_STEPS.length;
   const checkedItems = state.checkedItems || [];
-  const checkedRegular = checkedItems.filter((id) => !id.startsWith('guide-step-')).length;
-  const checkedGuide = checkedItems.filter((id) => id.startsWith('guide-step-')).length;
-  const checkedCount = checkedRegular + checkedGuide;
+  // Only count IDs that map to a visible item — checkedItems can contain
+  // stale entries (e.g. items hidden after a situation change).
+  const validIds = new Set([
+    ...allItems.map((item) => item.id),
+    ...GUIDE_STEPS.map((s) => `guide-step-${s.step}`),
+  ]);
+  const checkedCount = checkedItems.filter((id) => validIds.has(id)).length;
   const progress = totalItems > 0 ? checkedCount / totalItems : 0;
   const userName = state.onboarding?.name || '';
 
@@ -49,8 +52,14 @@ export default function HomeScreen() {
     (item) => item.urgency === 'high'
   );
 
+  // "Quick" means the task takes 10 minutes or less
+  const isQuick = (duration: string) => {
+    const match = duration.match(/^(\d+)\s*min/);
+    return !!match && parseInt(match[1], 10) <= 10;
+  };
+
   const easyTask = uncheckedItems.find(
-    (item) => item.urgency !== 'high' && item.duration.includes('5 min') && item.id !== bigTask?.id
+    (item) => item.urgency !== 'high' && isQuick(item.duration) && item.id !== bigTask?.id
   ) || uncheckedItems.find(
     (item) => item.urgency === 'low' && item.id !== bigTask?.id
   ) || uncheckedItems.find(

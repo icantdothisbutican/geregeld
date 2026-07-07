@@ -16,6 +16,7 @@ import { Button } from '../../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, AppState } from '../../src/store/appStore';
 import { getFilteredChapters } from '../../src/data/checklist';
+import { GUIDE_STEPS } from '../../src/data/guide';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
@@ -33,9 +34,14 @@ export default function ProfileScreen() {
   const situation = state.situation;
   const onboarding = state.onboarding;
   const chapters = getFilteredChapters(situation, onboarding);
-  const totalItems = chapters.reduce((sum, ch) => sum + ch.items.length, 0);
-  const checkedCount = state.checkedItems?.length || 0;
-  const contactsCount = state.contacts?.length || 0;
+  const allItems = chapters.flatMap((ch) => ch.items);
+  const totalItems = allItems.length + GUIDE_STEPS.length;
+  const validIds = new Set([
+    ...allItems.map((item) => item.id),
+    ...GUIDE_STEPS.map((s) => `guide-step-${s.step}`),
+  ]);
+  const checkedCount = (state.checkedItems || []).filter((id) => validIds.has(id)).length;
+  const vaultCount = state.vaultItems?.length || 0;
 
   function getSituationItems(): { label: string; value: string }[] {
     const items: { label: string; value: string }[] = [];
@@ -102,8 +108,8 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{contactsCount}</Text>
-              <Text style={styles.statLabel}>Contacten</Text>
+              <Text style={styles.statNumber}>{vaultCount}</Text>
+              <Text style={styles.statLabel}>In kluis</Text>
             </View>
           </View>
         </GradientCard>

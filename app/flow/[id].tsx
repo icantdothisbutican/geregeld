@@ -22,7 +22,7 @@ import { FLOWS, FlowStep, FormField } from '../../src/data/flows';
 import { loadState, saveState, generateId } from '../../src/store/appStore';
 
 export default function FlowScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, checkId } = useLocalSearchParams<{ id: string; checkId?: string }>();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -61,13 +61,20 @@ export default function FlowScreen() {
 
     const state = await loadState();
     const vaultItems = state.vaultItems || [];
-    vaultItems.push({
-      id: generateId(),
-      title: step.vaultTitle,
-      category: step.vaultCategory || 'document',
-      content: filledFields,
-      createdAt: new Date().toISOString(),
-    });
+    // Update existing entry with the same title instead of creating duplicates
+    const existing = vaultItems.find((v) => v.title === step.vaultTitle);
+    if (existing) {
+      existing.content = filledFields;
+      existing.createdAt = new Date().toISOString();
+    } else {
+      vaultItems.push({
+        id: generateId(),
+        title: step.vaultTitle,
+        category: step.vaultCategory || 'document',
+        content: filledFields,
+        createdAt: new Date().toISOString(),
+      });
+    }
     await saveState({ vaultItems });
     setSavedSteps((prev) => new Set(prev).add(currentStep));
   }
@@ -88,8 +95,11 @@ export default function FlowScreen() {
 
     const state = await loadState();
     const checkedItems = state.checkedItems || [];
-    if (flow && !checkedItems.includes(flow.id)) {
-      await saveState({ checkedItems: [...checkedItems, flow.id] });
+    // Use the checklist item id when provided (guide items have a different
+    // id than their flow), otherwise fall back to the flow id itself.
+    const idToCheck = (typeof checkId === 'string' && checkId) || flow?.id;
+    if (idToCheck && !checkedItems.includes(idToCheck)) {
+      await saveState({ checkedItems: [...checkedItems, idToCheck] });
     }
     router.back();
   }
