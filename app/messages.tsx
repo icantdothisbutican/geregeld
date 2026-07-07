@@ -18,6 +18,7 @@ import { GradientCard, GRADIENT_PRESETS } from '../src/components/GradientCard';
 import { Button } from '../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, saveState, AppState, Message, generateId } from '../src/store/appStore';
+import { encryptContentIfPossible } from '../src/lib/vaultCrypto';
 
 type MessageType = 'text' | 'voice' | 'question';
 
@@ -91,13 +92,16 @@ export default function MessagesScreen() {
     };
     const newMessages = [...messages, msg];
 
-    // Also save to vault
+    // Also save to vault (versleuteld als de kluis is ingesteld)
     const vaultItems = state?.vaultItems || [];
+    const sealed = encryptContentIfPossible(state?.vaultKeys, msg.content);
     const vaultEntry = {
       id: generateId(),
       title: `${msg.recipient ? `Aan ${msg.recipient}: ` : ''}${msg.title}`,
       category: 'note' as const,
-      content: msg.content,
+      content: sealed.content,
+      encrypted: sealed.encrypted,
+      sourceId: msg.id,
       createdAt: msg.createdAt,
     };
     const newVaultItems = [...vaultItems, vaultEntry];
@@ -125,10 +129,13 @@ export default function MessagesScreen() {
         onPress: async () => {
           const deletedMsg = messages.find((m) => m.id === id);
           const newMessages = messages.filter((m) => m.id !== id);
-          // Also remove matching vault item
-          const vaultItems = (state?.vaultItems || []).filter(
-            (v) => !(v.category === 'note' && deletedMsg && v.content === deletedMsg.content)
-          );
+          // Also remove matching vault item: nieuwe items via sourceId,
+          // oudere items (zonder sourceId) via inhoud-vergelijking
+          const vaultItems = (state?.vaultItems || []).filter((v) => {
+            if (v.sourceId === id) return false;
+            if (!v.sourceId && v.category === 'note' && deletedMsg && !v.encrypted && v.content === deletedMsg.content) return false;
+            return true;
+          });
           await saveState({ messages: newMessages, vaultItems });
           setState((prev) => prev ? { ...prev, messages: newMessages, vaultItems } : prev);
           setExpandedMessage(null);

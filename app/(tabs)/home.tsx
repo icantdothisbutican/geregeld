@@ -13,7 +13,7 @@ import { Card } from '../../src/components/Card';
 import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
 import { ProgressBar } from '../../src/components/ProgressBar';
 import { Ionicons } from '@expo/vector-icons';
-import { loadState, AppState } from '../../src/store/appStore';
+import { loadState, saveState, AppState } from '../../src/store/appStore';
 import { getFilteredChapters } from '../../src/data/checklist';
 import { GUIDE_STEPS } from '../../src/data/guide';
 import { FLOWS } from '../../src/data/flows';
@@ -72,6 +72,11 @@ export default function HomeScreen() {
     }
   }
 
+  async function dismissIntro() {
+    await saveState({ hasSeenIntro: true });
+    setState((prev) => (prev ? { ...prev, hasSeenIntro: true } : prev));
+  }
+
   const progressPercent = Math.round(progress * 100);
   return (
     <SafeAreaView style={styles.container}>
@@ -92,6 +97,30 @@ export default function HomeScreen() {
             <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
+
+        {/* Uitleg voor nieuwe gebruikers */}
+        {!state.hasSeenIntro && (
+          <Card style={styles.introCard}>
+            <View style={styles.introHeader}>
+              <Text style={styles.introTitle}>Zo werkt Geregeld</Text>
+              <TouchableOpacity onPress={dismissIntro} style={styles.introClose} activeOpacity={0.7}>
+                <Ionicons name="close" size={18} color={Colors.textTertiary} />
+              </TouchableOpacity>
+            </View>
+            {[
+              { nr: '1', text: 'Doorloop de stappen in Te Doen — wij begeleiden je bij elke taak.' },
+              { nr: '2', text: 'Wat je invult wordt automatisch versleuteld bewaard in je Kluis.' },
+              { nr: '3', text: 'Deel het overzicht met je vertrouwenspersoon via Instellingen.' },
+            ].map((step) => (
+              <View key={step.nr} style={styles.introStep}>
+                <View style={styles.introStepNr}>
+                  <Text style={styles.introStepNrText}>{step.nr}</Text>
+                </View>
+                <Text style={styles.introStepText}>{step.text}</Text>
+              </View>
+            ))}
+          </Card>
+        )}
 
         {/* Progress Card */}
         <GradientCard
@@ -116,6 +145,25 @@ export default function HomeScreen() {
               : `Nog ${totalItems - checkedCount} ${totalItems - checkedCount === 1 ? 'ding' : 'dingen'} te regelen`}
           </Text>
         </GradientCard>
+
+        {/* Noodingang voor nabestaanden */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push('/(tabs)/checklist?expand=overlijden-gids')}
+        >
+          <Card style={styles.emergencyCard}>
+            <View style={styles.emergencyIconWrap}>
+              <Ionicons name="heart-outline" size={22} color={Colors.pink} />
+            </View>
+            <View style={styles.emergencyContent}>
+              <Text style={styles.emergencyTitle}>Is er iemand overleden?</Text>
+              <Text style={styles.emergencyText}>
+                Start de stappen — we begeleiden je er rustig doorheen.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+          </Card>
+        </TouchableOpacity>
 
         {/* Recommended activities */}
         {(bigTask || easyTask) && (
@@ -234,8 +282,84 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     letterSpacing: -0.5,
   },
+  introCard: {
+    marginBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  introHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  introTitle: {
+    fontSize: FontSizes.large,
+    fontWeight: FontWeights.bold,
+    color: Colors.text,
+  },
+  introClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.fill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  introStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+  },
+  introStepNr: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  introStepNrText: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.bold,
+    color: Colors.primary,
+  },
+  introStepText: {
+    flex: 1,
+    fontSize: FontSizes.body,
+    color: Colors.textSecondary,
+    lineHeight: 21,
+  },
   progressCardOuter: {
+    marginBottom: Spacing.lg,
+  },
+  emergencyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
     marginBottom: Spacing.xl,
+    borderColor: 'rgba(244, 114, 182, 0.25)',
+  },
+  emergencyIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.pinkLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emergencyContent: {
+    flex: 1,
+    gap: 2,
+  },
+  emergencyTitle: {
+    fontSize: FontSizes.body,
+    fontWeight: FontWeights.bold,
+    color: Colors.text,
+  },
+  emergencyText: {
+    fontSize: FontSizes.small,
+    color: Colors.textSecondary,
+    lineHeight: 19,
   },
   progressHeader: {
     flexDirection: 'row',

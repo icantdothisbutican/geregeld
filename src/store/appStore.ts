@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { VaultKeys } from '../lib/vaultCrypto';
 
 export interface UserSituation {
   hasPartner: boolean | null;
@@ -43,6 +44,11 @@ export interface VaultItem {
   category: 'document' | 'password' | 'note';
   content: string;
   createdAt: string;
+  // true = content is sealed met de kluis-sleutel; false/afwezig = plaintext
+  // (wordt bij de eerstvolgende unlock alsnog versleuteld)
+  encrypted?: boolean;
+  // koppelt kluis-items aan hun bron (bijv. een bericht-id) voor sync/delete
+  sourceId?: string;
 }
 
 export interface Message {
@@ -63,9 +69,11 @@ export interface AppState {
   contacts: Contact[];
   funeralWishes: FuneralWishes;
   vaultPin: string | null;
+  vaultKeys: VaultKeys | null;
   vaultItems: VaultItem[];
   vaultUnlocked: boolean;
   messages: Message[];
+  hasSeenIntro: boolean;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -98,9 +106,11 @@ const DEFAULT_STATE: AppState = {
     specialWishes: '',
   },
   vaultPin: null,
+  vaultKeys: null,
   vaultItems: [],
   vaultUnlocked: false,
   messages: [],
+  hasSeenIntro: false,
 };
 
 const STORAGE_KEY = '@geregeld_state_v2';

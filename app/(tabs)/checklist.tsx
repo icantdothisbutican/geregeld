@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
@@ -69,6 +69,7 @@ function getGuideChapter(): GuideChapter {
 
 export default function ChecklistScreen() {
   const router = useRouter();
+  const { expand } = useLocalSearchParams<{ expand?: string }>();
   const [state, setState] = useState<AppState | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
@@ -81,6 +82,13 @@ export default function ChecklistScreen() {
       });
     }, [])
   );
+
+  // De noodingang op Home opent dit tabblad met ?expand=<hoofdstuk>
+  useEffect(() => {
+    if (typeof expand === 'string' && expand) {
+      setExpandedChapter(expand);
+    }
+  }, [expand]);
 
   if (!state) return null;
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
+import * as Clipboard from 'expo-clipboard';
 import * as Crypto from 'expo-crypto';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
@@ -18,19 +21,61 @@ import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCar
 import { Button } from '../../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, saveState, AppState, VaultItem, generateId } from '../../src/store/appStore';
+import {
+  createVaultKeys,
+  unlockWithPassword,
+  sealWithPublicKey,
+  openSealed,
+  bytesToHex,
+  hexToBytes,
+} from '../../src/lib/vaultCrypto';
+
+// Sleutel waaronder de prive-sleutel in de hardware-keychain staat,
+// zodat Face ID / vingerafdruk kan ontgrendelen zonder wachtwoord.
+const SECURE_STORE_KEY = 'geregeld_vault_key';
 
 async function hashPin(pin: string): Promise<string> {
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
 }
 
-// A stored value is a hash when it's exactly 64 hex chars (SHA-256 output)
 function isHashed(stored: string): boolean {
   return /^[a-f0-9]{64}$/i.test(stored);
+}
+
+/** Versleutelt alle plaintext-items (uit oudere versies of pre-setup writes). */
+function encryptPlaintextItems(
+  items: VaultItem[],
+  publicKeyHex: string
+): { items: VaultItem[]; changed: boolean } {
+  let changed = false;
+  const out = items.map((item) => {
+    if (!item.encrypted && item.content) {
+      changed = true;
+      return {
+        ...item,
+        content: sealWithPublicKey(publicKeyHex, item.content),
+        encrypted: true,
+      };
+    }
+    return item;
+  });
+  return { items: out, changed };
+}
+
+async function storeKeyForBiometrics(privateKey: Uint8Array) {
+  if (Platform.OS === 'web') return;
+  try {
+    await SecureStore.setItemAsync(SECURE_STORE_KEY, bytesToHex(privateKey));
+  } catch {
+    // Keychain niet beschikbaar (bijv. simulator zonder passcode) — geen ramp,
+    // wachtwoord-unlock blijft werken.
+  }
 }
 
 export default function VaultScreen() {
   const [state, setState] = useState<AppState | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [isSettingPin, setIsSettingPin] = useState(false);
   const [confirmPin, setConfirmPin] = useState('');
@@ -41,27 +86,66 @@ export default function VaultScreen() {
   const [newCategory, setNewCategory] = useState<'document' | 'password' | 'note'>('document');
   const [hasBiometrics, setHasBiometrics] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const privKeyRef = useRef<Uint8Array | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       loadState().then(async (s) => {
         setState(s);
-        if (!s.vaultPin) {
-          setIsSettingPin(true);
-        }
+        setIsSettingPin(!s.vaultKeys && !s.vaultPin);
+        // Vergrendel bij elk bezoek: sleutel uit geheugen wissen
+        privKeyRef.current = null;
         setIsUnlocked(false);
         setPinInput('');
         setExpandedItem(null);
+        setCopiedId(null);
 
-        // Check biometric availability
         const compatible = await LocalAuthentication.hasHardwareAsync();
         const enrolled = await LocalAuthentication.isEnrolledAsync();
-        setHasBiometrics(compatible && enrolled);
+        setHasBiometrics(Platform.OS !== 'web' && compatible && enrolled);
       });
     }, [])
   );
 
+  // Ontsleutelde inhoud per item-id, alleen berekend wanneer ontgrendeld
+  const decrypted = useMemo(() => {
+    const map: Record<string, string> = {};
+    const priv = privKeyRef.current;
+    for (const item of state?.vaultItems || []) {
+      if (!item.encrypted) {
+        map[item.id] = item.content;
+      } else if (priv) {
+        try {
+          map[item.id] = openSealed(priv, item.content);
+        } catch {
+          map[item.id] = '[Kan niet ontsleutelen]';
+        }
+      }
+    }
+    return map;
+    // isUnlocked in deps: privKeyRef verandert samen met unlock-status
+  }, [state?.vaultItems, isUnlocked]);
+
   if (!state) return null;
+
+  async function finishUnlock(privateKey: Uint8Array, current: AppState) {
+    privKeyRef.current = privateKey;
+    // Migreer eventuele plaintext-items naar versleutelde vorm
+    if (current.vaultKeys) {
+      const { items, changed } = encryptPlaintextItems(
+        current.vaultItems || [],
+        current.vaultKeys.publicKey
+      );
+      if (changed) {
+        await saveState({ vaultItems: items });
+        setState((prev) => (prev ? { ...prev, vaultItems: items } : prev));
+      }
+    }
+    await storeKeyForBiometrics(privateKey);
+    setIsUnlocked(true);
+    setPinInput('');
+  }
 
   async function handleBiometricAuth() {
     const result = await LocalAuthentication.authenticateAsync({
@@ -69,15 +153,28 @@ export default function VaultScreen() {
       cancelLabel: 'Gebruik wachtwoord',
       disableDeviceFallback: true,
     });
-    if (result.success) {
-      setIsUnlocked(true);
+    if (!result.success) return;
+
+    try {
+      const hex = await SecureStore.getItemAsync(SECURE_STORE_KEY);
+      if (hex) {
+        const current = await loadState();
+        await finishUnlock(hexToBytes(hex), current);
+        return;
+      }
+    } catch {
+      // valt door naar de melding hieronder
     }
+    Alert.alert(
+      'Eerst met wachtwoord',
+      'Ontgrendel de kluis eerst een keer met je wachtwoord. Daarna werkt Face ID.'
+    );
   }
 
-  async function handleSetPin() {
+  async function handleSetup() {
     if (pinStep === 'enter') {
       if (pinInput.length < 6) {
-        Alert.alert('Te kort', 'Je wachtwoord moet minimaal 6 tekens zijn voor maximale beveiliging.');
+        Alert.alert('Te kort', 'Je wachtwoord moet minimaal 6 tekens zijn.');
         return;
       }
       setConfirmPin(pinInput);
@@ -94,54 +191,89 @@ export default function VaultScreen() {
       return;
     }
 
-    // Never store the password itself — only its SHA-256 hash
-    const hashed = await hashPin(pinInput);
-    await saveState({ vaultPin: hashed });
-    setState((prev) => prev ? { ...prev, vaultPin: hashed } : prev);
-    setIsSettingPin(false);
-    setIsUnlocked(true);
-    setPinInput('');
-    setPinStep('enter');
+    setBusy(true);
+    try {
+      const { keys, privateKey } = await createVaultKeys(pinInput);
+      const current = await loadState();
+      const { items } = encryptPlaintextItems(current.vaultItems || [], keys.publicKey);
+      await saveState({ vaultKeys: keys, vaultPin: null, vaultItems: items });
+      const updated = { ...current, vaultKeys: keys, vaultPin: null, vaultItems: items };
+      setState(updated);
+      privKeyRef.current = privateKey;
+      await storeKeyForBiometrics(privateKey);
+      setIsSettingPin(false);
+      setIsUnlocked(true);
+      setPinInput('');
+      setConfirmPin('');
+      setPinStep('enter');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleUnlock() {
-    const stored = state?.vaultPin;
-    if (!stored) return;
+    if (!pinInput) return;
+    setBusy(true);
+    try {
+      const current = await loadState();
 
-    let matches = false;
-    if (isHashed(stored)) {
-      matches = (await hashPin(pinInput)) === stored;
-    } else {
-      // Legacy plaintext pin from an older version — verify and upgrade to a hash
-      matches = pinInput === stored;
-      if (matches) {
-        const hashed = await hashPin(pinInput);
-        await saveState({ vaultPin: hashed });
-        setState((prev) => prev ? { ...prev, vaultPin: hashed } : prev);
+      if (current.vaultKeys) {
+        // Normale route: prive-sleutel ontgrendelen met het wachtwoord.
+        // Een fout wachtwoord laat de decryptie falen (Poly1305-check).
+        try {
+          const privateKey = await unlockWithPassword(pinInput, current.vaultKeys);
+          await finishUnlock(privateKey, current);
+        } catch {
+          Alert.alert('Onjuist wachtwoord', 'Probeer het opnieuw.');
+          setPinInput('');
+        }
+        return;
       }
-    }
 
-    if (matches) {
+      // Legacy route: er is alleen nog een (gehashte) pincode uit een oudere
+      // versie. Verifieer die, en zet de kluis meteen om naar echte encryptie.
+      const stored = current.vaultPin;
+      if (!stored) return;
+      const matches = isHashed(stored)
+        ? (await hashPin(pinInput)) === stored
+        : pinInput === stored;
+      if (!matches) {
+        Alert.alert('Onjuist wachtwoord', 'Probeer het opnieuw.');
+        setPinInput('');
+        return;
+      }
+      const { keys, privateKey } = await createVaultKeys(pinInput);
+      const { items } = encryptPlaintextItems(current.vaultItems || [], keys.publicKey);
+      await saveState({ vaultKeys: keys, vaultPin: null, vaultItems: items });
+      setState({ ...current, vaultKeys: keys, vaultPin: null, vaultItems: items });
+      privKeyRef.current = privateKey;
+      await storeKeyForBiometrics(privateKey);
       setIsUnlocked(true);
       setPinInput('');
-    } else {
-      Alert.alert('Onjuist wachtwoord', 'Probeer het opnieuw.');
-      setPinInput('');
+    } finally {
+      setBusy(false);
     }
   }
 
+  function handleLock() {
+    privKeyRef.current = null;
+    setIsUnlocked(false);
+    setExpandedItem(null);
+  }
+
   async function handleAddItem() {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !state?.vaultKeys) return;
     const item: VaultItem = {
       id: generateId(),
       title: newTitle.trim(),
       category: newCategory,
-      content: newContent.trim(),
+      content: sealWithPublicKey(state.vaultKeys.publicKey, newContent.trim()),
+      encrypted: true,
       createdAt: new Date().toISOString(),
     };
     const newItems = [...(state?.vaultItems || []), item];
     await saveState({ vaultItems: newItems });
-    setState((prev) => prev ? { ...prev, vaultItems: newItems } : prev);
+    setState((prev) => (prev ? { ...prev, vaultItems: newItems } : prev));
     setNewTitle('');
     setNewContent('');
     setAddingItem(false);
@@ -156,10 +288,18 @@ export default function VaultScreen() {
         onPress: async () => {
           const newItems = (state?.vaultItems || []).filter((i) => i.id !== id);
           await saveState({ vaultItems: newItems });
-          setState((prev) => prev ? { ...prev, vaultItems: newItems } : prev);
+          setState((prev) => (prev ? { ...prev, vaultItems: newItems } : prev));
         },
       },
     ]);
+  }
+
+  async function handleCopy(id: string) {
+    const text = decrypted[id];
+    if (!text) return;
+    await Clipboard.setStringAsync(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2000);
   }
 
   const getCategoryIcon = (cat: string): any => {
@@ -189,7 +329,7 @@ export default function VaultScreen() {
     }
   };
 
-  // PIN setup screen
+  // Setup screen
   if (isSettingPin) {
     return (
       <SafeAreaView style={styles.container}>
@@ -201,7 +341,7 @@ export default function VaultScreen() {
             <Text style={styles.lockTitle}>Kluis beveiligen</Text>
             <Text style={styles.lockSubtitle}>
               {pinStep === 'enter'
-                ? 'Kies een sterk wachtwoord (min. 6 tekens) om je gevoelige documenten te beschermen.'
+                ? 'Kies een sterk wachtwoord (min. 6 tekens). Alles in je kluis wordt hiermee versleuteld opgeslagen.'
                 : 'Voer je wachtwoord nogmaals in ter bevestiging.'}
             </Text>
             <TextInput
@@ -212,13 +352,18 @@ export default function VaultScreen() {
               onChangeText={setPinInput}
               secureTextEntry
               autoFocus
+              onSubmitEditing={handleSetup}
             />
-            <Button title={pinStep === 'enter' ? 'Volgende' : 'Kluis beveiligen'} onPress={handleSetPin} />
+            <Button
+              title={busy ? 'Bezig met versleutelen...' : pinStep === 'enter' ? 'Volgende' : 'Kluis beveiligen'}
+              onPress={handleSetup}
+              disabled={busy}
+            />
 
             <View style={styles.offlineWarning}>
               <Ionicons name="information-circle-outline" size={18} color={Colors.warning} />
               <Text style={styles.offlineWarningText}>
-                Schrijf dit wachtwoord op en bewaar het op een veilige plek (bijv. in een kluis thuis). Dit wachtwoord kan niet worden hersteld.
+                Schrijf dit wachtwoord op en bewaar het op een veilige plek. Zonder wachtwoord is je kluis niet te openen — ook niet door ons.
               </Text>
             </View>
           </GradientCard>
@@ -238,7 +383,7 @@ export default function VaultScreen() {
             </View>
             <Text style={styles.lockTitle}>Kluis</Text>
             <Text style={styles.lockSubtitle}>
-              Ontgrendel met {hasBiometrics ? 'Face ID / vingerafdruk of ' : ''}je wachtwoord.
+              Je gegevens zijn versleuteld. Ontgrendel met {hasBiometrics ? 'Face ID / vingerafdruk of ' : ''}je wachtwoord.
             </Text>
 
             {hasBiometrics && (
@@ -266,7 +411,11 @@ export default function VaultScreen() {
               autoFocus={!hasBiometrics}
               onSubmitEditing={handleUnlock}
             />
-            <Button title="Ontgrendelen" onPress={handleUnlock} />
+            <Button
+              title={busy ? 'Ontgrendelen...' : 'Ontgrendelen'}
+              onPress={handleUnlock}
+              disabled={busy}
+            />
           </GradientCard>
         </ScrollView>
       </SafeAreaView>
@@ -285,10 +434,10 @@ export default function VaultScreen() {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <View>
-              <Text style={styles.headerLabel}>Beveiligd</Text>
+              <Text style={styles.headerLabel}>End-to-end versleuteld</Text>
               <Text style={styles.title}>Kluis</Text>
             </View>
-            <TouchableOpacity onPress={() => setIsUnlocked(false)} style={styles.lockButton}>
+            <TouchableOpacity onPress={handleLock} style={styles.lockButton}>
               <Ionicons name="lock-open-outline" size={20} color={Colors.accent} />
             </TouchableOpacity>
           </View>
@@ -345,7 +494,7 @@ export default function VaultScreen() {
               <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
               <Text style={styles.emptyText}>
-                Doorloop de stappen in 'Te Doen' — je gegevens worden automatisch hier opgeslagen.
+                Doorloop de stappen in 'Te Doen' — je gegevens worden automatisch versleuteld hier opgeslagen.
               </Text>
             </View>
           </GradientCard>
@@ -361,6 +510,7 @@ export default function VaultScreen() {
             {section.items.map((item) => {
               const isExpanded = expandedItem === item.id;
               const isPassword = item.category === 'password';
+              const plain = decrypted[item.id] ?? '';
               return (
                 <TouchableOpacity
                   key={item.id}
@@ -374,9 +524,9 @@ export default function VaultScreen() {
                       </View>
                       <View style={styles.itemContent}>
                         <Text style={styles.itemTitle}>{item.title}</Text>
-                        {!isExpanded && item.content ? (
+                        {!isExpanded && plain ? (
                           <Text style={styles.itemPreview}>
-                            {isPassword ? '••••••••' : item.content.split('\n')[0]}
+                            {isPassword ? '••••••••' : plain.split('\n')[0]}
                           </Text>
                         ) : null}
                       </View>
@@ -386,16 +536,31 @@ export default function VaultScreen() {
                         color={Colors.textTertiary}
                       />
                     </View>
-                    {isExpanded && item.content ? (
+                    {isExpanded && plain ? (
                       <View style={styles.itemExpanded}>
-                        <Text style={styles.itemFullContent}>{item.content}</Text>
-                        <TouchableOpacity
-                          onPress={() => handleDeleteItem(item.id)}
-                          style={styles.deleteRow}
-                        >
-                          <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-                          <Text style={styles.deleteText}>Verwijderen</Text>
-                        </TouchableOpacity>
+                        <Text style={styles.itemFullContent}>{plain}</Text>
+                        <View style={styles.itemActions}>
+                          <TouchableOpacity
+                            onPress={() => handleCopy(item.id)}
+                            style={styles.actionRow}
+                          >
+                            <Ionicons
+                              name={copiedId === item.id ? 'checkmark' : 'copy-outline'}
+                              size={16}
+                              color={copiedId === item.id ? Colors.primary : Colors.textSecondary}
+                            />
+                            <Text style={[styles.actionText, copiedId === item.id && styles.actionTextActive]}>
+                              {copiedId === item.id ? 'Gekopieerd' : 'Kopieer'}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => handleDeleteItem(item.id)}
+                            style={styles.actionRow}
+                          >
+                            <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                            <Text style={styles.deleteText}>Verwijderen</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     ) : null}
                   </Card>
@@ -675,11 +840,23 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 24,
   },
-  deleteRow: {
+  itemActions: {
+    flexDirection: 'row',
+    gap: Spacing.xl,
+    paddingTop: Spacing.sm,
+  },
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingTop: Spacing.sm,
+  },
+  actionText: {
+    fontSize: FontSizes.small,
+    color: Colors.textSecondary,
+    fontWeight: FontWeights.medium,
+  },
+  actionTextActive: {
+    color: Colors.primary,
   },
   deleteText: {
     fontSize: FontSizes.small,

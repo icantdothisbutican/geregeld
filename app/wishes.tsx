@@ -18,6 +18,7 @@ import { ChoiceButton } from '../src/components/ChoiceButton';
 import { Button } from '../src/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { loadState, saveState, FuneralWishes, generateId } from '../src/store/appStore';
+import { encryptContentIfPossible } from '../src/lib/vaultCrypto';
 
 const DRESS_OPTIONS = ['Formeel (donkere kleding)', 'Casual', 'Kleurrijk', 'Geen voorkeur'];
 const FLOWER_OPTIONS = ['Bloemen welkom', 'Donatie aan goed doel', 'Geen bloemen', 'Geen voorkeur'];
@@ -78,16 +79,19 @@ export default function WishesScreen() {
     const summary = wishesSummary(wishes);
     const vaultItems = [...(state.vaultItems || [])];
     if (summary) {
+      const sealed = encryptContentIfPossible(state.vaultKeys, summary);
       const existing = vaultItems.find((v) => v.title === 'Uitvaartwensen');
       if (existing) {
-        existing.content = summary;
+        existing.content = sealed.content;
+        existing.encrypted = sealed.encrypted;
         existing.createdAt = new Date().toISOString();
       } else {
         vaultItems.push({
           id: generateId(),
           title: 'Uitvaartwensen',
           category: 'document',
-          content: summary,
+          content: sealed.content,
+          encrypted: sealed.encrypted,
           createdAt: new Date().toISOString(),
         });
       }

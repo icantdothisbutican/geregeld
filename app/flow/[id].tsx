@@ -20,6 +20,7 @@ import { ProgressBar } from '../../src/components/ProgressBar';
 import { Ionicons } from '@expo/vector-icons';
 import { FLOWS, FlowStep, FormField } from '../../src/data/flows';
 import { loadState, saveState, generateId } from '../../src/store/appStore';
+import { encryptContentIfPossible } from '../../src/lib/vaultCrypto';
 
 export default function FlowScreen() {
   const { id, checkId } = useLocalSearchParams<{ id: string; checkId?: string }>();
@@ -61,17 +62,22 @@ export default function FlowScreen() {
 
     const state = await loadState();
     const vaultItems = state.vaultItems || [];
+    // Versleutel als de kluis is ingesteld; anders plaintext (wordt bij de
+    // eerstvolgende kluis-unlock alsnog versleuteld)
+    const sealed = encryptContentIfPossible(state.vaultKeys, filledFields);
     // Update existing entry with the same title instead of creating duplicates
     const existing = vaultItems.find((v) => v.title === step.vaultTitle);
     if (existing) {
-      existing.content = filledFields;
+      existing.content = sealed.content;
+      existing.encrypted = sealed.encrypted;
       existing.createdAt = new Date().toISOString();
     } else {
       vaultItems.push({
         id: generateId(),
         title: step.vaultTitle,
         category: step.vaultCategory || 'document',
-        content: filledFields,
+        content: sealed.content,
+        encrypted: sealed.encrypted,
         createdAt: new Date().toISOString(),
       });
     }

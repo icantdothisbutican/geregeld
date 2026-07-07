@@ -7,8 +7,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Share,
+  Platform,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import * as Clipboard from 'expo-clipboard';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
 import { GradientCard, GRADIENT_PRESETS } from '../../src/components/GradientCard';
@@ -75,11 +79,49 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('@geregeld_state_v2');
+            // Wis ook de kluis-sleutel uit de hardware-keychain
+            if (Platform.OS !== 'web') {
+              try { await SecureStore.deleteItemAsync('geregeld_vault_key'); } catch {}
+            }
             router.replace('/');
           },
         },
       ]
     );
+  }
+
+  async function handleShare() {
+    if (!state) return;
+    const name = state.onboarding?.name || 'Ik';
+    const trusted = state.onboarding?.trustedPerson;
+
+    const chapterLines = chapters.map((ch) => {
+      const done = ch.items.filter((i) => (state.checkedItems || []).includes(i.id)).length;
+      const mark = done === ch.items.length ? 'klaar' : `${done}/${ch.items.length}`;
+      return `- ${ch.label}: ${mark}`;
+    });
+
+    // Bewust GEEN kluis-inhoud, wachtwoorden of details — alleen dat het er is
+    const message = [
+      `${name} heeft het geregeld — via de Geregeld-app.`,
+      '',
+      `Voortgang: ${checkedCount} van ${totalItems} zaken geregeld.`,
+      '',
+      ...chapterLines,
+      '',
+      `Er staan ${vaultCount} items veilig versleuteld in de kluis (documenten, wachtwoorden en persoonlijke berichten).`,
+      trusted ? `Vertrouwenspersoon: ${trusted.name}${trusted.relation ? ` (${trusted.relation})` : ''}.` : '',
+      '',
+      'Als er iets gebeurt: open de Geregeld-app. De gids "Bij een overlijden" helpt je stap voor stap.',
+    ].filter((line) => line !== undefined).join('\n');
+
+    try {
+      await Share.share({ message });
+    } catch {
+      // Web zonder navigator.share: kopieer naar klembord als vangnet
+      await Clipboard.setStringAsync(message);
+      Alert.alert('Gekopieerd', 'Het overzicht staat op je klembord. Plak het in een bericht naar je vertrouwenspersoon.');
+    }
   }
 
   const situationItems = getSituationItems();
@@ -139,17 +181,15 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </Card>
 
-        {/* Shared account */}
+        {/* Share overview */}
         <GradientCard colors={GRADIENT_PRESETS.soft} style={styles.sharedCardOuter}>
-          <Text style={styles.sharedTitle}>Gedeeld account</Text>
+          <Text style={styles.sharedTitle}>Deel met je vertrouwenspersoon</Text>
           <Text style={styles.sharedText}>
-            Deel de toegang met je partner, kinderen of vertrouwenspersoon.
+            Stuur een overzicht van wat je geregeld hebt — zonder wachtwoorden of andere geheimen. Zo weet je naaste dat alles klaarstaat.
           </Text>
           <Button
-            title="Uitnodiging versturen"
-            onPress={() =>
-              Alert.alert('Binnenkort beschikbaar', 'De deelfunctie is nog in ontwikkeling.')
-            }
+            title="Deel overzicht"
+            onPress={handleShare}
             variant="outline"
             size="medium"
           />
