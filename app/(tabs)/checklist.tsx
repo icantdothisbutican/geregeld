@@ -206,7 +206,7 @@ export default function ChecklistScreen() {
                       <Ionicons
                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
                         size={18}
-                        color={Colors.textTertiary}
+                        color="rgba(255, 255, 255, 0.8)"
                       />
                     </View>
                   </View>
@@ -381,7 +381,8 @@ const styles = StyleSheet.create({
   },
   chapterDesc: {
     fontSize: FontSizes.small,
-    color: Colors.textSecondary,
+    // Wit met transparantie: leesbaar op zowel felle als donkere gradients
+    color: 'rgba(255, 255, 255, 0.78)',
   },
   chapterMeta: {
     flexDirection: 'row',
@@ -390,7 +391,7 @@ const styles = StyleSheet.create({
   },
   chapterCount: {
     fontSize: FontSizes.body,
-    color: Colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: FontWeights.semibold,
   },
   doneBadge: {
