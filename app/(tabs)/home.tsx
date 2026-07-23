@@ -6,7 +6,10 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Share,
+  Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSizes, FontWeights, BorderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/Card';
@@ -34,7 +37,7 @@ export default function HomeScreen() {
   const allItems = chapters.flatMap((ch) => ch.items);
   const totalItems = allItems.length + GUIDE_STEPS.length;
   const checkedItems = state.checkedItems || [];
-  // Only count IDs that map to a visible item — checkedItems can contain
+  // Only count IDs that map to a visible item; checkedItems can contain
   // stale entries (e.g. items hidden after a situation change).
   const validIds = new Set([
     ...allItems.map((item) => item.id),
@@ -77,6 +80,17 @@ export default function HomeScreen() {
     setState((prev) => (prev ? { ...prev, hasSeenIntro: true } : prev));
   }
 
+  async function handleInvite() {
+    const name = state?.onboarding?.name;
+    const message = `${name ? `${name} heeft` : 'Ik heb'} net alles geregeld met de Geregeld-app: testament, wachtwoorden, uitvaartwensen en een boodschap voor later. Kostte 10 minuten. Nu jij: https://geregeld.app`;
+    try {
+      await Share.share({ message });
+    } catch {
+      await Clipboard.setStringAsync(message);
+      Alert.alert('Gekopieerd', 'De uitnodiging staat op je klembord. Plak hem in een bericht.');
+    }
+  }
+
   const progressPercent = Math.round(progress * 100);
   return (
     <SafeAreaView style={styles.container}>
@@ -108,7 +122,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             {[
-              { nr: '1', text: 'Doorloop de stappen in Te Doen — wij begeleiden je bij elke taak.' },
+              { nr: '1', text: 'Doorloop de stappen in Te Doen, wij begeleiden je bij elke taak.' },
               { nr: '2', text: 'Wat je invult wordt automatisch versleuteld bewaard in je Kluis.' },
               { nr: '3', text: 'Deel het overzicht met je vertrouwenspersoon via Instellingen.' },
             ].map((step) => (
@@ -158,7 +172,7 @@ export default function HomeScreen() {
             <View style={styles.emergencyContent}>
               <Text style={styles.emergencyTitle}>Is er iemand overleden?</Text>
               <Text style={styles.emergencyText}>
-                Start de stappen — we begeleiden je er rustig doorheen.
+                Start de stappen. We begeleiden je er rustig doorheen.
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
@@ -228,12 +242,30 @@ export default function HomeScreen() {
               <Text style={styles.infoValue}>
                 {state.onboarding.trustedPerson.name}
                 {state.onboarding.trustedPerson.relation
-                  ? ` — ${state.onboarding.trustedPerson.relation}`
+                  ? ` (${state.onboarding.trustedPerson.relation})`
                   : ''}
               </Text>
             </View>
           </Card>
         )}
+
+        {/* 1-tap uitnodigen: de virale loop */}
+        <TouchableOpacity activeOpacity={0.7} onPress={handleInvite}>
+          <GradientCard colors={GRADIENT_PRESETS.glow} style={styles.inviteCard}>
+            <View style={styles.inviteRow}>
+              <View style={styles.inviteIconWrap}>
+                <Ionicons name="paper-plane" size={22} color="#fff" />
+              </View>
+              <View style={styles.inviteContent}>
+                <Text style={styles.inviteTitle}>Nodig iemand uit</Text>
+                <Text style={styles.inviteText}>
+                  "Ik heb het geregeld. Nu jij." Stuur met een tik naar je partner of ouders.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
+            </View>
+          </GradientCard>
+        </TouchableOpacity>
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -244,7 +276,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -515,6 +547,36 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.semibold,
     color: Colors.text,
     marginTop: 2,
+  },
+  inviteCard: {
+    marginBottom: Spacing.lg,
+  },
+  inviteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  inviteIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inviteContent: {
+    flex: 1,
+    gap: 2,
+  },
+  inviteTitle: {
+    fontSize: FontSizes.body,
+    fontWeight: FontWeights.bold,
+    color: '#fff',
+  },
+  inviteText: {
+    fontSize: FontSizes.small,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 19,
   },
   bottomPadding: {
     height: Spacing.xxl,

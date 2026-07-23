@@ -42,7 +42,7 @@ export const CHAPTERS: Chapter[] = [
       {
         id: 'jur-1b',
         title: 'Testament controleren',
-        description: 'Controleer of je testament nog actueel is — zeker na een verhuizing, scheiding of geboorte.',
+        description: 'Controleer of je testament nog actueel is, zeker na een verhuizing, scheiding of geboorte.',
         urgency: 'medium',
         duration: '10 min',
         hasFlow: true,
@@ -93,7 +93,7 @@ export const CHAPTERS: Chapter[] = [
       {
         id: 'fin-2',
         title: 'Verzekeringen op een rij zetten',
-        description: 'Uitvaartverzekering, levensverzekering, zorgverzekering — leg de polisgegevens vast.',
+        description: 'Uitvaartverzekering, levensverzekering, zorgverzekering: leg de polisgegevens vast.',
         urgency: 'high',
         duration: '20 min',
         hasFlow: true,

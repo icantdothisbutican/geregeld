@@ -1,9 +1,11 @@
 export const Colors = {
-  // Dark backgrounds
-  background: '#0B0B14',
-  surface: '#161625',
-  surfaceSecondary: '#1E1E30',
-  fill: '#252540',
+  // Noorderlicht-basis: diep indigo. De echte lucht komt uit AuroraBackground;
+  // dit is de fallback en de kleur onder de gradients.
+  background: '#0C102E',
+  // Liquid glass: doorschijnende oppervlakken die de aurora doorlaten
+  surface: 'rgba(18, 22, 54, 0.55)',
+  surfaceSecondary: 'rgba(24, 28, 64, 0.6)',
+  fill: 'rgba(255, 255, 255, 0.07)',
 
   // Primary - teal/mint (calm, modern)
   primary: '#2DD4BF',
@@ -32,9 +34,9 @@ export const Colors = {
   success: '#2DD4BF',
   successLight: 'rgba(45, 212, 191, 0.15)',
 
-  // Borders & separators
-  separator: 'rgba(255, 255, 255, 0.06)',
-  border: 'rgba(255, 255, 255, 0.10)',
+  // Borders & separators: iets helderder zodat glasranden oplichten
+  separator: 'rgba(255, 255, 255, 0.10)',
+  border: 'rgba(255, 255, 255, 0.16)',
 
   // Gradient colors
   gradientPink: '#F5576C',

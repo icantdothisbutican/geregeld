@@ -72,6 +72,10 @@ export interface AppState {
   vaultKeys: VaultKeys | null;
   vaultItems: VaultItem[];
   vaultUnlocked: boolean;
+  // Brute-force-rem: aantal mislukte pogingen en tot wanneer de kluis
+  // op slot blijft na te veel pogingen
+  vaultFailedAttempts: number;
+  vaultLockUntil: number | null;
   messages: Message[];
   hasSeenIntro: boolean;
 }
@@ -109,6 +113,8 @@ const DEFAULT_STATE: AppState = {
   vaultKeys: null,
   vaultItems: [],
   vaultUnlocked: false,
+  vaultFailedAttempts: 0,
+  vaultLockUntil: null,
   messages: [],
   hasSeenIntro: false,
 };

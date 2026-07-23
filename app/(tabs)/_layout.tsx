@@ -8,10 +8,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Laat de aurora-achtergrond door de tab-scenes heen schijnen
+        sceneStyle: { backgroundColor: 'transparent' },
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: Colors.surface,
+          backgroundColor: 'rgba(12, 16, 46, 0.78)',
           borderTopColor: Colors.separator,
           borderTopWidth: 1,
           height: 88,

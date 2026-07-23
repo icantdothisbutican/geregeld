@@ -101,9 +101,9 @@ export default function ProfileScreen() {
       return `- ${ch.label}: ${mark}`;
     });
 
-    // Bewust GEEN kluis-inhoud, wachtwoorden of details — alleen dat het er is
+    // Bewust GEEN kluis-inhoud, wachtwoorden of details, alleen dat het er is
     const message = [
-      `${name} heeft het geregeld — via de Geregeld-app.`,
+      `${name} heeft het geregeld via de Geregeld-app.`,
       '',
       `Voortgang: ${checkedCount} van ${totalItems} zaken geregeld.`,
       '',
@@ -185,7 +185,7 @@ export default function ProfileScreen() {
         <GradientCard colors={GRADIENT_PRESETS.soft} style={styles.sharedCardOuter}>
           <Text style={styles.sharedTitle}>Deel met je vertrouwenspersoon</Text>
           <Text style={styles.sharedText}>
-            Stuur een overzicht van wat je geregeld hebt — zonder wachtwoorden of andere geheimen. Zo weet je naaste dat alles klaarstaat.
+            Stuur een overzicht van wat je geregeld hebt, zonder wachtwoorden of andere geheimen. Zo weet je naaste dat alles klaarstaat.
           </Text>
           <Button
             title="Deel overzicht"
@@ -224,7 +224,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     padding: Spacing.lg,

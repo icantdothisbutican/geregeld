@@ -10,7 +10,7 @@
  *    ermee versleutelen ("sealen"), niemand kan ermee lezen.
  *  - De PRIVE-sleutel staat versleuteld opgeslagen met een sleutel die
  *    via PBKDF2 (100.000 iteraties, SHA-256) uit het wachtwoord wordt
- *    afgeleid. Alleen het juiste wachtwoord kan hem openen — een fout
+ *    afgeleid. Alleen het juiste wachtwoord kan hem openen; een fout
  *    wachtwoord faalt cryptografisch (Poly1305 auth), niet via een
  *    stringvergelijking.
  *  - Elke kluis-inhoud wordt per item gesealed: efemeer x25519-paar →
@@ -91,7 +91,7 @@ export async function unlockWithPassword(
   return xchacha20poly1305(kek, hexToBytes(nonceHex)).decrypt(hexToBytes(cipherHex));
 }
 
-/** Versleutelt tekst met de publieke sleutel — kan zonder wachtwoord. */
+/** Versleutelt tekst met de publieke sleutel; kan zonder wachtwoord. */
 export function sealWithPublicKey(publicKeyHex: string, plaintext: string): string {
   const ephemeralPriv = randomBytes(32);
   const ephemeralPub = x25519.getPublicKey(ephemeralPriv);

@@ -115,6 +115,10 @@ export default function ChecklistScreen() {
       router.push('/messages');
       return;
     }
+    if (itemId === 'con-2') {
+      router.push('/cards');
+      return;
+    }
     if (itemId.startsWith('uit-')) {
       router.push('/wishes');
       return;
@@ -227,7 +231,7 @@ export default function ChecklistScreen() {
                     const isChecked = checkedItems.includes(item.id);
                     // Items can link to a flow, or to a dedicated page
                     // (berichten en uitvaartwensen hebben een eigen scherm)
-                    const hasOwnPage = item.id === 'boo-1' || item.id.startsWith('uit-');
+                    const hasOwnPage = item.id === 'boo-1' || item.id === 'con-2' || item.id.startsWith('uit-');
                     const hasFlow = item.hasFlow && (
                       hasOwnPage ||
                       (item.id.startsWith('guide-step-')
@@ -302,7 +306,7 @@ export default function ChecklistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     padding: Spacing.lg,

@@ -67,7 +67,7 @@ async function storeKeyForBiometrics(privateKey: Uint8Array) {
   try {
     await SecureStore.setItemAsync(SECURE_STORE_KEY, bytesToHex(privateKey));
   } catch {
-    // Keychain niet beschikbaar (bijv. simulator zonder passcode) — geen ramp,
+    // Keychain niet beschikbaar (bijv. simulator zonder passcode), geen ramp,
     // wachtwoord-unlock blijft werken.
   }
 }
@@ -211,21 +211,48 @@ export default function VaultScreen() {
     }
   }
 
+  // Brute-force-rem: na 5 foute pogingen gaat de kluis 30 seconden op slot,
+  // daarna verdubbelt de wachttijd bij elke volgende foute poging
+  async function registerFailedAttempt(current: AppState) {
+    const attempts = (current.vaultFailedAttempts || 0) + 1;
+    let lockUntil: number | null = null;
+    if (attempts >= 5) {
+      const lockSeconds = 30 * Math.pow(2, attempts - 5);
+      lockUntil = Date.now() + lockSeconds * 1000;
+    }
+    await saveState({ vaultFailedAttempts: attempts, vaultLockUntil: lockUntil });
+    if (lockUntil) {
+      const secs = Math.round((lockUntil - Date.now()) / 1000);
+      Alert.alert('Te veel pogingen', `De kluis is ${secs} seconden vergrendeld.`);
+    } else {
+      Alert.alert('Onjuist wachtwoord', `Probeer het opnieuw. Nog ${5 - attempts} pogingen voor een tijdslot.`);
+    }
+    setPinInput('');
+  }
+
   async function handleUnlock() {
     if (!pinInput) return;
     setBusy(true);
     try {
       const current = await loadState();
 
+      // Tijdslot actief?
+      if (current.vaultLockUntil && Date.now() < current.vaultLockUntil) {
+        const secs = Math.ceil((current.vaultLockUntil - Date.now()) / 1000);
+        Alert.alert('Even wachten', `Te veel foute pogingen. Probeer het over ${secs} seconden opnieuw.`);
+        setPinInput('');
+        return;
+      }
+
       if (current.vaultKeys) {
         // Normale route: prive-sleutel ontgrendelen met het wachtwoord.
         // Een fout wachtwoord laat de decryptie falen (Poly1305-check).
         try {
           const privateKey = await unlockWithPassword(pinInput, current.vaultKeys);
+          await saveState({ vaultFailedAttempts: 0, vaultLockUntil: null });
           await finishUnlock(privateKey, current);
         } catch {
-          Alert.alert('Onjuist wachtwoord', 'Probeer het opnieuw.');
-          setPinInput('');
+          await registerFailedAttempt(current);
         }
         return;
       }
@@ -238,10 +265,10 @@ export default function VaultScreen() {
         ? (await hashPin(pinInput)) === stored
         : pinInput === stored;
       if (!matches) {
-        Alert.alert('Onjuist wachtwoord', 'Probeer het opnieuw.');
-        setPinInput('');
+        await registerFailedAttempt(current);
         return;
       }
+      await saveState({ vaultFailedAttempts: 0, vaultLockUntil: null });
       const { keys, privateKey } = await createVaultKeys(pinInput);
       const { items } = encryptPlaintextItems(current.vaultItems || [], keys.publicKey);
       await saveState({ vaultKeys: keys, vaultPin: null, vaultItems: items });
@@ -292,6 +319,22 @@ export default function VaultScreen() {
         },
       },
     ]);
+  }
+
+  // Dubbele beveiliging: een wachtwoord tonen vraagt om een extra
+  // biometrische bevestiging, ook al is de kluis al ontgrendeld
+  async function handleExpandItem(item: VaultItem, isExpanded: boolean) {
+    if (isExpanded) {
+      setExpandedItem(null);
+      return;
+    }
+    if (item.category === 'password' && hasBiometrics) {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Bevestig om het wachtwoord te tonen',
+      });
+      if (!result.success) return;
+    }
+    setExpandedItem(item.id);
   }
 
   async function handleCopy(id: string) {
@@ -347,7 +390,7 @@ export default function VaultScreen() {
             <TextInput
               style={styles.pinInput}
               placeholder={pinStep === 'enter' ? 'Kies wachtwoord' : 'Bevestig wachtwoord'}
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor="rgba(255, 255, 255, 0.65)"
               value={pinInput}
               onChangeText={setPinInput}
               secureTextEntry
@@ -363,7 +406,7 @@ export default function VaultScreen() {
             <View style={styles.offlineWarning}>
               <Ionicons name="information-circle-outline" size={18} color={Colors.warning} />
               <Text style={styles.offlineWarningText}>
-                Schrijf dit wachtwoord op en bewaar het op een veilige plek. Zonder wachtwoord is je kluis niet te openen — ook niet door ons.
+                Schrijf dit wachtwoord op en bewaar het op een veilige plek. Zonder wachtwoord is je kluis niet te openen, ook niet door ons.
               </Text>
             </View>
           </GradientCard>
@@ -404,7 +447,7 @@ export default function VaultScreen() {
             <TextInput
               style={styles.pinInput}
               placeholder="Wachtwoord"
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor="rgba(255, 255, 255, 0.65)"
               value={pinInput}
               onChangeText={setPinInput}
               secureTextEntry
@@ -476,6 +519,11 @@ export default function VaultScreen() {
               onChangeText={setNewContent}
               multiline
             />
+            {newCategory === 'password' && (
+              <Text style={styles.passwordHint}>
+                Tip: bewaar alleen wat nabestaanden echt nodig hebben, zoals de toegang tot je telefoon, e-mail en DigiD. Hoe minder er in de kluis staat, hoe kleiner het risico.
+              </Text>
+            )}
             <View style={styles.addButtons}>
               <Button title="Opslaan" onPress={handleAddItem} size="medium" />
               <Button title="Annuleren" onPress={() => setAddingItem(false)} variant="outline" size="medium" />
@@ -494,7 +542,7 @@ export default function VaultScreen() {
               <Ionicons name="shield-outline" size={48} color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>Je kluis is leeg</Text>
               <Text style={styles.emptyText}>
-                Doorloop de stappen in 'Te Doen' — je gegevens worden automatisch versleuteld hier opgeslagen.
+                Doorloop de stappen in 'Te Doen'. Je gegevens worden automatisch versleuteld hier opgeslagen.
               </Text>
             </View>
           </GradientCard>
@@ -515,7 +563,7 @@ export default function VaultScreen() {
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={0.7}
-                  onPress={() => setExpandedItem(isExpanded ? null : item.id)}
+                  onPress={() => handleExpandItem(item, isExpanded)}
                 >
                   <Card style={styles.itemCard}>
                     <View style={styles.itemRow}>
@@ -579,7 +627,7 @@ export default function VaultScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     padding: Spacing.lg,
@@ -639,7 +687,7 @@ const styles = StyleSheet.create({
   },
   lockSubtitle: {
     fontSize: FontSizes.body,
-    color: Colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
     lineHeight: 22,
     marginTop: Spacing.sm,
@@ -677,7 +725,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.medium,
   },
   pinInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(10, 14, 40, 0.35)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     fontSize: FontSizes.large,
@@ -699,7 +747,7 @@ const styles = StyleSheet.create({
   offlineWarningText: {
     flex: 1,
     fontSize: FontSizes.small,
-    color: Colors.warning,
+    color: 'rgba(255, 255, 255, 0.92)',
     lineHeight: 20,
     fontWeight: FontWeights.medium,
   },
@@ -771,6 +819,11 @@ const styles = StyleSheet.create({
   },
   addButtons: {
     gap: Spacing.sm,
+  },
+  passwordHint: {
+    fontSize: FontSizes.small,
+    color: Colors.warning,
+    lineHeight: 19,
   },
   emptyContent: {
     alignItems: 'center',

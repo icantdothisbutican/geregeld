@@ -67,7 +67,7 @@ const STEPS: StepConfig[] = [
   },
   {
     question: 'Heb je al een testament?',
-    subtitle: 'Geen zorgen als het antwoord nee is — we helpen je verder',
+    subtitle: 'Geen zorgen als het antwoord nee is, we helpen je verder',
     type: 'choice',
     options: ['Ja', 'Nee', 'Weet ik niet'],
   },
@@ -198,7 +198,7 @@ export default function OnboardingQuestions() {
         if (address.trim()) return 'We zoeken automatisch notarissen en uitvaartondernemers bij jou in de buurt.';
         return null;
       case 6:
-        if (hasTestament === 'Nee') return 'Geen zorgen — dit is een van de eerste dingen die we gaan regelen.';
+        if (hasTestament === 'Nee') return 'Geen zorgen, dit is een van de eerste dingen die we gaan regelen.';
         if (hasTestament === 'Ja') return 'We checken of je testament nog actueel is.';
         return null;
       case 7:
@@ -336,7 +336,7 @@ export default function OnboardingQuestions() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
