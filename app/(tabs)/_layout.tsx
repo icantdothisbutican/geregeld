@@ -1,7 +1,11 @@
 import React from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { Colors } from '../../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+
+const HAS_BLUR = Platform.OS === 'ios' || Platform.OS === 'web';
 
 export default function TabLayout() {
   return (
@@ -13,13 +17,16 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: 'rgba(12, 16, 46, 0.78)',
-          borderTopColor: Colors.separator,
+          backgroundColor: HAS_BLUR ? 'rgba(12, 16, 46, 0.45)' : 'rgba(12, 16, 46, 0.85)',
+          borderTopColor: 'rgba(255, 255, 255, 0.14)',
           borderTopWidth: 1,
           height: 88,
           paddingBottom: 24,
           paddingTop: 8,
         },
+        tabBarBackground: HAS_BLUR
+          ? () => <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+          : undefined,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

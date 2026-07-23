@@ -20,11 +20,11 @@ export const Colors = {
   pink: '#F472B6',
   pinkLight: 'rgba(244, 114, 182, 0.15)',
 
-  // Text - improved hierarchy
-  text: '#F1F1F6',
-  textSecondary: '#9CA3AF',
-  textTertiary: '#6B7280',
-  textMuted: '#4B5563',
+  // Text: iets lichter dan standaard, voor leesbaarheid over de aurora
+  text: '#F4F4F9',
+  textSecondary: '#AEB5C8',
+  textTertiary: '#8C94AA',
+  textMuted: '#6B7280',
 
   // Semantic
   warning: '#FBBF24',

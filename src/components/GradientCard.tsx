@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { BorderRadius, Spacing } from '../constants/theme';
 
 interface GradientCardProps {
@@ -11,20 +12,20 @@ interface GradientCardProps {
   end?: { x: number; y: number };
 }
 
-// Coherent gradient system with semantic meaning:
-// - warm:  important actions, emotional content (roze/peach)
-// - cool:  progress, info, calm steps (blauw/teal)
-// - soft:  secondary info, backgrounds (subtle overlay)
-// - glow:  highlights, CTAs, special moments (warm accent)
-export const GRADIENT_PRESETS = {
-  // Primary gradients - 2 colors each, soft and cohesive
-  warm: ['#E8457C', '#F4845F'],       // roze > oranje - belangrijk, actie
-  cool: ['#5B7FE1', '#4ECDC4'],       // blauw > teal - info, voortgang
-  soft: ['#1E2235', '#1A2030'],       // donker subtiel - achtergrond, secondary
-  glow: ['#F2994A', '#F2C94C'],       // warm goud - highlight, CTA
+const HAS_BLUR = Platform.OS === 'ios' || Platform.OS === 'web';
 
-  // Subtle overlays for dark cards
-  subtle: ['rgba(91, 127, 225, 0.10)', 'rgba(78, 205, 196, 0.05)'],
+// Liquid glass tinten: doorschijnende kleurwaas over een blur van de
+// aurora, in plaats van dekkende gradients. Zelfde semantiek als eerst:
+// - warm: belangrijk, actie, emotioneel (roze/oranje)
+// - cool: info, voortgang, rustig (blauw/teal)
+// - soft: secundair, achtergrond (donker glas)
+// - glow: highlight, speciale momenten (goud)
+export const GRADIENT_PRESETS = {
+  warm: ['rgba(232, 69, 124, 0.34)', 'rgba(244, 132, 95, 0.22)'],
+  cool: ['rgba(91, 127, 225, 0.32)', 'rgba(78, 205, 196, 0.22)'],
+  soft: ['rgba(16, 20, 48, 0.40)', 'rgba(13, 16, 42, 0.30)'],
+  glow: ['rgba(242, 153, 74, 0.34)', 'rgba(242, 201, 76, 0.22)'],
+  subtle: ['rgba(255, 255, 255, 0.07)', 'rgba(255, 255, 255, 0.03)'],
 };
 
 export function GradientCard({
@@ -36,14 +37,25 @@ export function GradientCard({
 }: GradientCardProps) {
   return (
     <View style={[styles.wrapper, style]}>
+      {HAS_BLUR ? (
+        <BlurView intensity={32} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.androidBase]} pointerEvents="none" />
+      )}
       <LinearGradient
         colors={colors as [string, string, ...string[]]}
         start={start}
         end={end}
-        style={styles.gradient}
-      >
-        {children}
-      </LinearGradient>
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      {/* Glans langs de bovenrand: het "liquid glass" randlichtje */}
+      <LinearGradient
+        colors={['rgba(255, 255, 255, 0.32)', 'rgba(255, 255, 255, 0)']}
+        style={styles.sheen}
+        pointerEvents="none"
+      />
+      <View style={styles.content}>{children}</View>
     </View>
   );
 }
@@ -53,10 +65,19 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.20)',
   },
-  gradient: {
+  androidBase: {
+    backgroundColor: 'rgba(13, 16, 42, 0.55)',
+  },
+  sheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 10,
+  },
+  content: {
     padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
   },
 });

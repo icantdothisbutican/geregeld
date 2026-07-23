@@ -50,7 +50,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -61,9 +61,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   size_large: {
     paddingVertical: Spacing.md,
