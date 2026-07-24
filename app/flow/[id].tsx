@@ -28,6 +28,8 @@ export default function FlowScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [savedSteps, setSavedSteps] = useState<Set<number>>(new Set());
+  // Aantal ingevulde exemplaren per herhaalbare stap (stap-index -> aantal)
+  const [repeatCounts, setRepeatCounts] = useState<Record<number, number>>({});
 
   const flow = id ? FLOWS[id] : null;
 
@@ -50,13 +52,57 @@ export default function FlowScreen() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function saveFormToVault(step: FlowStep) {
+  // Namespaced sleutel voor een veld in een herhaalbaar exemplaar
+  function repKey(stepIndex: number, instance: number, fieldKey: string) {
+    return `rep_${stepIndex}_${instance}_${fieldKey}`;
+  }
+
+  function getRepeatCount(stepIndex: number) {
+    return repeatCounts[stepIndex] ?? 1;
+  }
+
+  function addRepeatInstance(stepIndex: number) {
+    setRepeatCounts((prev) => ({ ...prev, [stepIndex]: getRepeatCount(stepIndex) + 1 }));
+  }
+
+  function removeRepeatInstance(stepIndex: number, instance: number, fields: FormField[]) {
+    // Verschuif de waarden van latere exemplaren een plek naar voren
+    const count = getRepeatCount(stepIndex);
+    setFormData((prev) => {
+      const next = { ...prev };
+      for (let i = instance; i < count - 1; i++) {
+        for (const f of fields) {
+          next[repKey(stepIndex, i, f.key)] = prev[repKey(stepIndex, i + 1, f.key)] || '';
+        }
+      }
+      for (const f of fields) delete next[repKey(stepIndex, count - 1, f.key)];
+      return next;
+    });
+    setRepeatCounts((prev) => ({ ...prev, [stepIndex]: Math.max(1, count - 1) }));
+  }
+
+  async function saveFormToVault(step: FlowStep, stepIndex: number) {
     if (!step.formFields || !step.vaultTitle) return;
 
-    const filledFields = step.formFields
-      .filter((f) => formData[f.key]?.trim())
-      .map((f) => `${f.label}: ${formData[f.key].trim()}`)
-      .join('\n');
+    let filledFields: string;
+    if (step.repeatable) {
+      const blocks: string[] = [];
+      const count = getRepeatCount(stepIndex);
+      for (let i = 0; i < count; i++) {
+        const lines = step.formFields
+          .filter((f) => formData[repKey(stepIndex, i, f.key)]?.trim())
+          .map((f) => `${f.label}: ${formData[repKey(stepIndex, i, f.key)].trim()}`);
+        if (lines.length) {
+          blocks.push(`${step.repeatSingular || 'Item'} ${i + 1}\n${lines.join('\n')}`);
+        }
+      }
+      filledFields = blocks.join('\n\n');
+    } else {
+      filledFields = step.formFields
+        .filter((f) => formData[f.key]?.trim())
+        .map((f) => `${f.label}: ${formData[f.key].trim()}`)
+        .join('\n');
+    }
 
     if (!filledFields) return;
 
@@ -88,7 +134,7 @@ export default function FlowScreen() {
   async function handleNext() {
     // Save form data to vault if this step has form fields
     if (step.formFields && step.vaultTitle && !savedSteps.has(currentStep)) {
-      await saveFormToVault(step);
+      await saveFormToVault(step, currentStep);
     }
     setCurrentStep(currentStep + 1);
   }
@@ -96,7 +142,7 @@ export default function FlowScreen() {
   async function handleConfirm() {
     // Save any remaining form data
     if (step.formFields && step.vaultTitle && !savedSteps.has(currentStep)) {
-      await saveFormToVault(step);
+      await saveFormToVault(step, currentStep);
     }
 
     const state = await loadState();
@@ -119,7 +165,14 @@ export default function FlowScreen() {
   }
 
   const hasFormFields = step.formFields && step.formFields.length > 0;
-  const hasFilledFields = step.formFields?.some((f) => formData[f.key]?.trim());
+  const hasFilledFields = step.repeatable
+    ? step.formFields?.some((f) => {
+        for (let i = 0; i < getRepeatCount(currentStep); i++) {
+          if (formData[repKey(currentStep, i, f.key)]?.trim()) return true;
+        }
+        return false;
+      })
+    : step.formFields?.some((f) => formData[f.key]?.trim());
   const isSaved = savedSteps.has(currentStep);
 
   function getInputType(field: FormField) {
@@ -192,25 +245,69 @@ export default function FlowScreen() {
             {/* Form fields */}
             {hasFormFields && (
               <View style={styles.formSection}>
-                {step.formFields!.map((field) => (
-                  <View key={field.key} style={styles.fieldContainer}>
-                    <Text style={styles.fieldLabel}>{field.label}</Text>
-                    <TextInput
-                      style={[
-                        styles.fieldInput,
-                        field.type === 'multiline' && styles.fieldMultiline,
-                      ]}
-                      placeholder={field.placeholder}
-                      placeholderTextColor={Colors.textTertiary}
-                      value={formData[field.key] || ''}
-                      onChangeText={(val) => updateFormField(field.key, val)}
-                      secureTextEntry={getInputType(field)}
-                      keyboardType={getKeyboardType(field)}
-                      multiline={field.type === 'multiline'}
-                      autoCapitalize={field.type === 'email' ? 'none' : 'sentences'}
-                    />
-                  </View>
-                ))}
+                {step.repeatable ? (
+                  <>
+                    {Array.from({ length: getRepeatCount(currentStep) }).map((_, inst) => (
+                      <View key={inst} style={styles.repeatBlock}>
+                        <View style={styles.repeatHeader}>
+                          <Text style={styles.repeatTitle}>
+                            {step.repeatSingular || 'Item'} {inst + 1}
+                          </Text>
+                          {getRepeatCount(currentStep) > 1 && (
+                            <TouchableOpacity
+                              onPress={() => removeRepeatInstance(currentStep, inst, step.formFields!)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                        {step.formFields!.map((field) => (
+                          <View key={field.key} style={styles.fieldContainer}>
+                            <Text style={styles.fieldLabel}>{field.label}</Text>
+                            <TextInput
+                              style={styles.fieldInput}
+                              placeholder={field.placeholder}
+                              placeholderTextColor={Colors.textTertiary}
+                              value={formData[repKey(currentStep, inst, field.key)] || ''}
+                              onChangeText={(val) => updateFormField(repKey(currentStep, inst, field.key), val)}
+                              keyboardType={getKeyboardType(field)}
+                              autoCapitalize="sentences"
+                            />
+                          </View>
+                        ))}
+                      </View>
+                    ))}
+                    <TouchableOpacity
+                      style={styles.addMoreButton}
+                      onPress={() => addRepeatInstance(currentStep)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="add-circle-outline" size={20} color={Colors.primary} />
+                      <Text style={styles.addMoreText}>{step.repeatLabel || 'Nog een toevoegen'}</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  step.formFields!.map((field) => (
+                    <View key={field.key} style={styles.fieldContainer}>
+                      <Text style={styles.fieldLabel}>{field.label}</Text>
+                      <TextInput
+                        style={[
+                          styles.fieldInput,
+                          field.type === 'multiline' && styles.fieldMultiline,
+                        ]}
+                        placeholder={field.placeholder}
+                        placeholderTextColor={Colors.textTertiary}
+                        value={formData[field.key] || ''}
+                        onChangeText={(val) => updateFormField(field.key, val)}
+                        secureTextEntry={getInputType(field)}
+                        keyboardType={getKeyboardType(field)}
+                        multiline={field.type === 'multiline'}
+                        autoCapitalize={field.type === 'email' ? 'none' : 'sentences'}
+                      />
+                    </View>
+                  ))
+                )}
 
                 {/* Vault save indicator */}
                 {step.vaultTitle && (
@@ -435,6 +532,41 @@ const styles = StyleSheet.create({
   fieldMultiline: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  repeatBlock: {
+    gap: Spacing.md,
+    paddingBottom: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  repeatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  repeatTitle: {
+    fontSize: FontSizes.small,
+    fontWeight: FontWeights.bold,
+    color: Colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  addMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderStyle: 'dashed',
+  },
+  addMoreText: {
+    fontSize: FontSizes.body,
+    fontWeight: FontWeights.semibold,
+    color: Colors.primary,
   },
   vaultIndicator: {
     flexDirection: 'row',

@@ -17,6 +17,12 @@ export interface FlowStep {
   formFields?: FormField[];
   vaultCategory?: 'document' | 'password' | 'note';
   vaultTitle?: string; // title for vault entry
+  // Herhaalbaar: formFields gelden als sjabloon; de gebruiker kan meerdere
+  // exemplaren invullen (bijv. meerdere bankrekeningen). repeatLabel is de
+  // tekst op de "voeg toe"-knop, singular het woord per exemplaar.
+  repeatable?: boolean;
+  repeatLabel?: string;
+  repeatSingular?: string;
 }
 
 export interface Flow {
@@ -185,28 +191,19 @@ export const FLOWS: Record<string, Flow> = {
         ],
       },
       {
-        title: 'Betaalrekening(en)',
-        description: 'Vul je betaalrekening(en) in. Deze gegevens worden beveiligd opgeslagen in je kluis.',
+        title: 'Je rekeningen',
+        description: 'Vul al je rekeningen in: betaal-, spaar- en beleggingsrekeningen. Voeg er zoveel toe als je hebt. Alles wordt versleuteld opgeslagen in je kluis.',
         actionType: 'form',
+        repeatable: true,
+        repeatLabel: 'Nog een rekening toevoegen',
+        repeatSingular: 'Rekening',
         formFields: [
-          { key: 'bank1_naam', label: 'Bank', placeholder: 'Bijv. ING', type: 'text', sensitive: true },
-          { key: 'bank1_iban', label: 'IBAN', placeholder: 'NL00 INGB 0000 0000 00', type: 'text', sensitive: true },
-          { key: 'bank1_type', label: 'Soort rekening', placeholder: 'Bijv. betaalrekening, en/of', type: 'text', sensitive: true },
+          { key: 'bank', label: 'Bank', placeholder: 'Bijv. ING', type: 'text', sensitive: true },
+          { key: 'iban', label: 'IBAN', placeholder: 'NL00 INGB 0000 0000 00', type: 'text', sensitive: true },
+          { key: 'soort', label: 'Soort rekening', placeholder: 'Bijv. betaalrekening, spaar, en/of', type: 'text', sensitive: true },
         ],
         vaultCategory: 'document',
-        vaultTitle: 'Betaalrekening',
-      },
-      {
-        title: 'Spaarrekening(en)',
-        description: 'Heb je spaar- of beleggingsrekeningen? Vul die hier in.',
-        actionType: 'form',
-        formFields: [
-          { key: 'spaar1_bank', label: 'Bank', placeholder: 'Bijv. Rabobank', type: 'text', sensitive: true },
-          { key: 'spaar1_iban', label: 'IBAN', placeholder: 'NL00 RABO 0000 0000 00', type: 'text', sensitive: true },
-          { key: 'spaar1_type', label: 'Soort', placeholder: 'Bijv. spaarrekening, beleggingen', type: 'text', sensitive: true },
-        ],
-        vaultCategory: 'document',
-        vaultTitle: 'Spaar-/beleggingsrekening',
+        vaultTitle: 'Bankrekeningen',
       },
       {
         title: 'Overzicht compleet?',
@@ -284,6 +281,101 @@ export const FLOWS: Record<string, Flow> = {
         description: 'Je vertrouwenspersoon heeft nu toegang tot je belangrijkste accounts.',
         actionType: 'confirm',
         actionLabel: 'Ja, alles gedeeld',
+      },
+    ],
+  },
+  'dig-5': {
+    id: 'dig-5',
+    title: 'Nalatenschapscontact (Apple)',
+    subtitle: 'Geef een naaste toegang tot je Apple-account',
+    duration: '5 min',
+    steps: [
+      {
+        title: 'Wat is een nalatenschapscontact?',
+        description: 'Apple laat je een vertrouwd persoon aanwijzen die na je overlijden bij je iCloud-account kan: fotos, berichten, notities en bestanden. Zonder dit raken die gegevens vaak voorgoed ontoegankelijk.',
+        actionType: 'info',
+        details: [
+          'Werkt vanaf iOS 15.2 en nieuwer',
+          'De persoon krijgt een toegangssleutel',
+          'Na overlijden heeft die de sleutel en een overlijdensakte nodig',
+          'Jij hoeft geen wachtwoord te delen',
+        ],
+      },
+      {
+        title: 'Zo stel je het in',
+        description: 'Volg deze stappen op je iPhone. Het kost een paar minuten.',
+        actionType: 'info',
+        details: [
+          'Open Instellingen en tik bovenaan op je naam',
+          'Tik op "Inloggen en beveiliging"',
+          'Tik op "Nalatenschapscontact"',
+          'Kies een persoon en deel de toegangssleutel met ze',
+        ],
+      },
+      {
+        title: 'Meer weten?',
+        description: 'Apple legt de hele procedure uit op hun website.',
+        actionType: 'link',
+        actionLabel: 'Lees op support.apple.com',
+        actionUrl: 'https://support.apple.com/nl-nl/HT212360',
+      },
+      {
+        title: 'Wie heb je aangewezen?',
+        description: 'Noteer wie toegang krijgt, zodat het in je overzicht staat.',
+        actionType: 'form',
+        formFields: [
+          { key: 'apple_contact', label: 'Nalatenschapscontact', placeholder: 'Naam van de persoon', type: 'text', sensitive: true },
+        ],
+        vaultCategory: 'document',
+        vaultTitle: 'Apple nalatenschapscontact',
+      },
+      {
+        title: 'Geregeld?',
+        description: 'Je Apple-account is toegankelijk voor je naaste als het nodig is.',
+        actionType: 'confirm',
+        actionLabel: 'Ja, ingesteld',
+      },
+    ],
+  },
+  'dig-6': {
+    id: 'dig-6',
+    title: 'Contactpersoon voor inactiviteit (Google)',
+    subtitle: 'Bepaal wat er met je Google-account gebeurt',
+    duration: '5 min',
+    steps: [
+      {
+        title: 'Wat doet dit?',
+        description: 'Met Googles Inactieve accountbeheer bepaal je wat er gebeurt als je account lang niet wordt gebruikt: gegevens delen met een vertrouwd persoon, of het account laten verwijderen.',
+        actionType: 'info',
+        details: [
+          'Je stelt een periode van inactiviteit in (bijv. 3 maanden)',
+          'Daarna krijgt je gekozen contactpersoon toegang tot wat jij aangeeft',
+          'Denk aan Gmail, Drive, Fotos en YouTube',
+          'Optioneel: laat het account daarna automatisch verwijderen',
+        ],
+      },
+      {
+        title: 'Zo stel je het in',
+        description: 'Regel het via je Google-account.',
+        actionType: 'link',
+        actionLabel: 'Open Inactief accountbeheer',
+        actionUrl: 'https://myaccount.google.com/inactive',
+      },
+      {
+        title: 'Wie heb je aangewezen?',
+        description: 'Noteer wie toegang krijgt tot je Google-account.',
+        actionType: 'form',
+        formFields: [
+          { key: 'google_contact', label: 'Contactpersoon', placeholder: 'Naam van de persoon', type: 'text', sensitive: true },
+        ],
+        vaultCategory: 'document',
+        vaultTitle: 'Google inactief accountbeheer',
+      },
+      {
+        title: 'Geregeld?',
+        description: 'Je Google-account is nu geregeld voor als het nodig is.',
+        actionType: 'confirm',
+        actionLabel: 'Ja, ingesteld',
       },
     ],
   },
